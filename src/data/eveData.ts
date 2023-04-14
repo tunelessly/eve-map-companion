@@ -3,14 +3,6 @@ import {
     Color,
 } from "three";
 
-// type Enumerate<N extends number, Acc extends number[] = []> = Acc['length'] extends N
-//     ? Acc[number]
-//     : Enumerate<N, [...Acc, Acc['length']]>
-
-// type Range<F extends number, T extends number> = Exclude<Enumerate<T>, Enumerate<F>> | T;
-
-// type ValidColorInfo = Range<0, 255>;
-
 type RGB = {
     r: number,
     g: number,
@@ -89,10 +81,11 @@ const generateGeometryData = () => {
     const coordinates: coordinates3D[] = [];
     const colors: number[] = [];
     const color = new Color();
+    const permissibleRegion = "The Forge";
 
     for (let system of eveUniverse.solarSystems) {
+        if (system.region != permissibleRegion) continue;
         let systemColorRGB = HSV2RGB(sectoHSV(system.security));
-        console.log(systemColorRGB);
         let coordinates3D = { x: system.x, y: system.y, z: system.z };
         let transformedColors = RGBtofloat(systemColorRGB);
         coordinates.push(coordinates3D);

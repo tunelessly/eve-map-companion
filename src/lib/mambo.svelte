@@ -9,7 +9,6 @@
 	import generateGeometryData from "../data/eveData";
 
 	const geometry = new BufferGeometry();
-	const material = new PointsMaterial({ size: 10, vertexColors: true });
 	const { positions, colors } = generateGeometryData();
 	geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
 	geometry.setAttribute("color", new Float32BufferAttribute(colors, 3));
@@ -18,20 +17,28 @@
 	geometry.center();
 
 	let center = geometry.boundingSphere.center;
+	let radius = geometry.boundingSphere.radius;
+	let arbitraryMaterialScalingFactor = 70;
+
+	const material = new PointsMaterial({
+		size: radius / arbitraryMaterialScalingFactor,
+		vertexColors: true,
+	});
 
 	const cameraProperties: PerspectiveCameraProperties = {
 		near: 1,
-		far: geometry.boundingSphere.radius * 10,
+		far: radius * 10,
 		fov: 20,
 		viewportAware: true,
 		inViewport: true,
 		useCamera: true,
 		position: {
 			x: center.x,
-			y: center.y - geometry.boundingSphere.radius * 5,
+			y: center.y - radius * 5,
 			z: center.z,
 		},
 	};
+	console.log(radius);
 </script>
 
 <div>
