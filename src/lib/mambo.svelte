@@ -6,7 +6,7 @@
 		PointsMaterial,
 		Float32BufferAttribute,
 	} from "three";
-	import generateGeometryData from "../data/eveData";
+	import { generateGeometryData } from "../data/eveData";
 
 	const geometry = new BufferGeometry();
 	const { positions, colors } = generateGeometryData();
