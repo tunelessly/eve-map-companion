@@ -1,48 +1,58 @@
-<script>
-	import { Canvas, InteractiveObject, OrbitControls, T } from '@threlte/core'
-	import { spring } from 'svelte/motion'
-	import { degToRad } from 'three/src/math/MathUtils'
+<script lang="ts">
+	import { Canvas, OrbitControls, T, PerspectiveCamera } from "@threlte/core";
+	import type { PerspectiveCameraProperties } from "@threlte/core";
+	import {
+		BufferGeometry,
+		PointsMaterial,
+		Float32BufferAttribute,
+	} from "three";
+	import generateGeometryData from "../data/eveData";
 
-	const scale = spring(1)
+	const geometry = new BufferGeometry();
+	const material = new PointsMaterial({ size: 10, vertexColors: true });
+	const { positions, colors } = generateGeometryData();
+	geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+	geometry.setAttribute("color", new Float32BufferAttribute(colors, 3));
+	geometry.scale(1000, 1000, 1000);
+	geometry.computeBoundingSphere();
+	geometry.center();
+
+	let center = geometry.boundingSphere.center;
+
+	const cameraProperties: PerspectiveCameraProperties = {
+		near: 1,
+		far: geometry.boundingSphere.radius * 10,
+		fov: 20,
+		viewportAware: true,
+		inViewport: true,
+		useCamera: true,
+		position: {
+			x: center.x,
+			y: center.y - geometry.boundingSphere.radius * 5,
+			z: center.z,
+		},
+	};
 </script>
 
 <div>
 	<Canvas>
-		<T.PerspectiveCamera makeDefault position={[10, 10, 10]} fov={24}>
-			<OrbitControls maxPolarAngle={degToRad(80)} enableZoom={false} target={{ y: 0.5 }} />
-		</T.PerspectiveCamera>
+		<PerspectiveCamera
+			{...cameraProperties}
+			lookAt={{ x: center.x, y: center.y, z: center.z }}
+		>
+			<OrbitControls enableZoom={true} />
+		</PerspectiveCamera>
 
-		<T.DirectionalLight castShadow position={[3, 10, 10]} />
-		<T.DirectionalLight position={[-3, 10, -10]} intensity={0.2} />
-		<T.AmbientLight intensity={0.2} />
-
-		<!-- Cube -->
-		<T.Group scale={$scale}>
-			<T.Mesh position.y={0.5} castShadow let:ref>
-				<!-- Add interaction -->
-				<InteractiveObject
-					object={ref}
-					interactive
-					on:pointerenter={() => ($scale = 2)}
-					on:pointerleave={() => ($scale = 1)}
-				/>
-
-				<T.BoxGeometry />
-				<T.MeshStandardMaterial color="#333333" />
-			</T.Mesh>
-		</T.Group>
-
-		<!-- Floor -->
-		<T.Mesh receiveShadow rotation.x={degToRad(-90)}>
-			<T.CircleGeometry args={[3, 72]} />
-			<T.MeshStandardMaterial color="white" />
-		</T.Mesh>
+		<T.Points {geometry} {material} />
 	</Canvas>
 </div>
 
 <style>
 	div {
-		height: 100%;
+		position: fixed;
+		top: 0;
+		left: 0;
 		width: 100%;
+		height: 100%;
 	}
 </style>
