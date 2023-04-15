@@ -8,11 +8,14 @@ export const generateGeometryData = () => {
     const region = "Aridia"
     const galaxy: Galaxy = new Galaxy();
 
-    console.log(Date.now());
+    let start = Date.now();
     galaxy.populateGalaxy(eveUniverse);
-    console.log(Date.now());
+    console.log(`Populate Galaxy took: ${Date.now() - start}`);
 
+    start = Date.now();
     // galaxy.subway(region);
+    galaxy.galacticSubway();
+    console.log(`Subway took: ${Date.now() - start}`);
     // const data = galaxy.getRegionCoordinatesandStatuses(region);
     const data = galaxy.getGalaxyCoordinatesandStatuses();
     const colors = data.map(x => x[1])
