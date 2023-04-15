@@ -3,6 +3,9 @@
         "browser": true,
         "es2021": true
     },
+    "plugins": [
+        "neverthrow"
+    ],
     "extends": "standard-with-typescript",
     "overrides": [],
     "parserOptions": {
@@ -10,9 +13,6 @@
         "sourceType": "module"
     },
     "rules": {
-        "semi": [
-            2,
-            "always"
-        ]
+        "neverthrow/must-use-result": "error"
     }
 }
