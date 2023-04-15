@@ -13,12 +13,15 @@ export const generateGeometryData = () => {
     console.log(Date.now());
 
     const colors = galaxy
-        .produceSecurityStatuses(region)
+        // .getRegionSecStatuses(region)
+        .getGalaxySecurityStatuses()
         .map(sectoHSV)
         .map(HSV2RGB)
         .map(RGBtofloat)
         .flatMap(color => [color.r, color.g, color.b]);
-    const positions = coordinatestoGeometry(galaxy.produceCoordinates(region));
+    // const positions = coordinatestoGeometry(galaxy.getRegionCoordinates(region));
+    const positions = coordinatestoGeometry(galaxy.getGalaxyCoordinates());
+
 
     return { positions, colors };
 };

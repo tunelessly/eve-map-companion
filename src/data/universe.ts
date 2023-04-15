@@ -138,6 +138,9 @@ export class Galaxy {
             }).mapErr(e => { console.log(`Error attempting to find region: ${e}`) });
         }
 
+        //
+        // Extremely slow for obvious reasons
+        //
         // for (let jump of sourceData.jumps) {
         //     for (let regionID in this.regions) {
         //         this.getRegion(regionID).andThen(region => {
@@ -160,6 +163,9 @@ export class Galaxy {
     }
 
     private produceSystemThing<T>(regionName: string, thing: (arg: System) => T): T[] {
+        // TODO: Result.combine can actually fail and it will fail to produce a whole region
+        // Don't know how big a worry this is, are there really going to be regions with broken
+        // system references?
         const resultList = this.getRegion(regionName).map(region => {
             // For fuck's sake
             return (Object.keys(region.systems) as unknown as Array<keyof typeof region.systems>).map(key => {
@@ -169,12 +175,24 @@ export class Galaxy {
         return resultList.andThen(list => Result.combine(list)).mapErr(e => { console.log(`Error attempting to fetch a system's thing: ${e}`) }).unwrapOr([]);
     }
 
-    public produceCoordinates = (regionName: string): coordinates3D[] => {
+    public getRegionCoordinates = (regionName: string): coordinates3D[] => {
         return this.produceSystemThing(regionName, system => system.coordinates);
     }
 
-    public produceSecurityStatuses = (regionName: string): number[] => {
+    public getRegionSecStatuses = (regionName: string): number[] => {
         return this.produceSystemThing(regionName, system => system.securityStatus);
+    }
+
+    public getGalaxyCoordinates = (): coordinates3D[] => {
+        // This is safe because unless Object.keys is broken
+        // so let's cut the crap
+        return Object.keys(this._regions).flatMap(this.getRegionCoordinates);
+    }
+
+    public getGalaxySecurityStatuses = (): number[] => {
+        // This is safe because unless Object.keys is broken
+        // so let's cut the crap
+        return Object.keys(this._regions).flatMap(this.getRegionSecStatuses);
     }
 
 
