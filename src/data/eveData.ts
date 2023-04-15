@@ -12,16 +12,13 @@ export const generateGeometryData = () => {
     galaxy.populateGalaxy(eveUniverse);
     console.log(Date.now());
 
-    const colors = galaxy
-        // .getRegionSecStatuses(region)
-        .getGalaxySecurityStatuses()
+    const data = galaxy.getGalaxyCoordinatesandStatuses();
+    const colors = data.map(x => x[1])
         .map(sectoHSV)
         .map(HSV2RGB)
         .map(RGBtofloat)
         .flatMap(color => [color.r, color.g, color.b]);
-    // const positions = coordinatestoGeometry(galaxy.getRegionCoordinates(region));
-    const positions = coordinatestoGeometry(galaxy.getGalaxyCoordinates());
-
+    const positions = coordinatestoGeometry(data.map(x => x[0]))
 
     return { positions, colors };
 };

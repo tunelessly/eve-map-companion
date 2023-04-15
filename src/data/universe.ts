@@ -175,26 +175,16 @@ export class Galaxy {
         return resultList.andThen(list => Result.combine(list)).mapErr(e => { console.log(`Error attempting to fetch a system's thing: ${e}`) }).unwrapOr([]);
     }
 
-    public getRegionCoordinates = (regionName: string): coordinates3D[] => {
-        return this.produceSystemThing(regionName, system => system.coordinates);
+    public getRegionCoordinatesandStatuses = (regionName: string): [coordinates3D, number][] => {
+        return this.produceSystemThing(regionName, system => { return [system.coordinates, system.securityStatus] });
     }
 
-    public getRegionSecStatuses = (regionName: string): number[] => {
-        return this.produceSystemThing(regionName, system => system.securityStatus);
-    }
 
-    public getGalaxyCoordinates = (): coordinates3D[] => {
+    public getGalaxyCoordinatesandStatuses = (): [coordinates3D, number][] => {
         // This is safe because unless Object.keys is broken
         // so let's cut the crap
-        return Object.keys(this._regions).flatMap(this.getRegionCoordinates);
+        return Object.keys(this._regions).flatMap(this.getRegionCoordinatesandStatuses);
     }
-
-    public getGalaxySecurityStatuses = (): number[] => {
-        // This is safe because unless Object.keys is broken
-        // so let's cut the crap
-        return Object.keys(this._regions).flatMap(this.getRegionSecStatuses);
-    }
-
 
     public subway = (regionName): void => {
         this.getRegion(regionName).map(region => {
