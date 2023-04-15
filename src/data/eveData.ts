@@ -12,6 +12,8 @@ export const generateGeometryData = () => {
     galaxy.populateGalaxy(eveUniverse);
     console.log(Date.now());
 
+    // galaxy.subway(region);
+    // const data = galaxy.getRegionCoordinatesandStatuses(region);
     const data = galaxy.getGalaxyCoordinatesandStatuses();
     const colors = data.map(x => x[1])
         .map(sectoHSV)

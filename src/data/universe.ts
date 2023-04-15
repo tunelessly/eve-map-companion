@@ -52,8 +52,8 @@ class System {
 class Region {
     private readonly _id: string;
     private readonly _name: string;
-    private readonly _systems: Record<number, System> = {};
-    private readonly _remappedSystems: Record<number, System> = {};
+    private _systems: Record<number, System> = {};
+    private _remappedSystems: Record<number, System> = {};
 
     constructor(id, name) {
         this._id = id;
@@ -78,6 +78,12 @@ class Region {
 
     public addRemmapedSystem(system: System): void {
         this._remappedSystems[system.id] = system;
+    }
+
+    public swapSystems(): void {
+        const temp = this._systems;
+        this._systems = this._remappedSystems;
+        this._remappedSystems = temp;
     }
 
     public getSystem(systemID: number): Result<System, string> {
@@ -179,11 +185,16 @@ export class Galaxy {
         return this.produceSystemThing(regionName, system => { return [system.coordinates, system.securityStatus] });
     }
 
-
     public getGalaxyCoordinatesandStatuses = (): [coordinates3D, number][] => {
-        // This is safe because unless Object.keys is broken
+        // This is safe unless Object.keys is broken
         // so let's cut the crap
         return Object.keys(this._regions).flatMap(this.getRegionCoordinatesandStatuses);
+    }
+
+    public galacticSubway = (): void => {
+        // This is safe unless Object.keys is broken
+        // so let's cut the crap
+        Object.keys(this._regions).forEach(this.subway);
     }
 
     public subway = (regionName): void => {
@@ -222,6 +233,7 @@ export class Galaxy {
                         console.log(`Remapped system: ${remappedSystem.name} to ${remappedSystem.coordinates.x} ${remappedSystem.coordinates.y} ${remappedSystem.coordinates.z} `);
                     });
                 });
+            region.swapSystems();
         }).mapErr(e => console.log(`Error attempting to produce a Subway: ${e}`));
     }
 }
