@@ -5,28 +5,20 @@ import { Color } from 'three';
 
 export const generateGeometryData = () => {
     // createGraph();
+    const region = "Aridia"
     const galaxy: Galaxy = new Galaxy();
+
+    console.log(Date.now());
     galaxy.populateGalaxy(eveUniverse);
-    const regionCoordinates = galaxy.produceCoordinates("Aridia");
+    console.log(Date.now());
 
-    const coordinates: coordinates3D[] = [];
-    const colors: number[] = [];
-    const color = new Color();
-    const permissibleRegion = "Aridia";
-
-    for (let system of eveUniverse.solarSystems) {
-        // if (system.region != permissibleRegion) continue;
-        let systemColorRGB = HSV2RGB(sectoHSV(system.security));
-        let coordinates3D = { x: system.x, y: system.y, z: system.z };
-        let transformedColors = RGBtofloat(systemColorRGB);
-        coordinates.push(coordinates3D);
-        color.setRGB(transformedColors.r, transformedColors.g, transformedColors.b);
-        colors.push(color.r, color.g, color.b);
-    }
-
-    // const newCoordinates = forceGrapgh(coordinates);
-    // const positions = coordinatestoGeometry(newCoordinates);
-    const positions = coordinatestoGeometry(coordinates);
+    const colors = galaxy
+        .produceSecurityStatuses(region)
+        .map(sectoHSV)
+        .map(HSV2RGB)
+        .map(RGBtofloat)
+        .flatMap(color => [color.r, color.g, color.b]);
+    const positions = coordinatestoGeometry(galaxy.produceCoordinates(region));
 
     return { positions, colors };
 };

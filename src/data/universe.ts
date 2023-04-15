@@ -135,18 +135,20 @@ export class Galaxy {
             );
             this.getRegion(system.region).map(region => {
                 region.addSystem(system);
-            }).mapErr(console.log);
+            }).mapErr(e => { console.log(`Error attempting to find region: ${e}`) });
         }
 
-        for (let jump of sourceData.jumps) {
-            for (let regionID in this.regions) {
-                this.getRegion(regionID).andThen(region => {
-                    return region.getSystem(jump.from);
-                }).map(system => {
-                    system.addLink(jump.to);
-                }).mapErr(console.log);
-            }
-        }
+        // for (let jump of sourceData.jumps) {
+        //     for (let regionID in this.regions) {
+        //         this.getRegion(regionID).andThen(region => {
+        //             return region.getSystem(jump.from);
+        //         }).map(system => {
+        //             system.addLink(jump.to);
+        //         }).mapErr(e => {
+        //             console.log(`Error attempting to add jump to system: ${e}`);
+        //         });
+        //     }
+        // }
 
         // Object.keys(this.regions).forEach(regionName => {
         //     console.log(`Region: ${regionName}`);
@@ -161,10 +163,10 @@ export class Galaxy {
         const resultList = this.getRegion(regionName).map(region => {
             // For fuck's sake
             return (Object.keys(region.systems) as unknown as Array<keyof typeof region.systems>).map(key => {
-                return region.getSystem(key).map(thing).mapErr(console.log);
+                return region.getSystem(key).map(thing);
             });
         });
-        return resultList.andThen(list => Result.combine(list)).mapErr(console.log).unwrapOr([]);
+        return resultList.andThen(list => Result.combine(list)).mapErr(e => { console.log(`Error attempting to fetch a system's thing: ${e}`) }).unwrapOr([]);
     }
 
     public produceCoordinates = (regionName: string): coordinates3D[] => {
@@ -212,6 +214,6 @@ export class Galaxy {
                         console.log(`Remapped system: ${remappedSystem.name} to ${remappedSystem.coordinates.x} ${remappedSystem.coordinates.y} ${remappedSystem.coordinates.z} `);
                     });
                 });
-        }).mapErr(console.log);
+        }).mapErr(e => console.log(`Error attempting to produce a Subway: ${e}`));
     }
 }
