@@ -18,7 +18,7 @@
 
 	let center = geometry.boundingSphere.center;
 	let radius = geometry.boundingSphere.radius;
-	let arbitraryMaterialScalingFactor = 70;
+	let arbitraryMaterialScalingFactor = 40;
 
 	const material = new PointsMaterial({
 		size: radius / arbitraryMaterialScalingFactor,
@@ -34,11 +34,10 @@
 		useCamera: true,
 		position: {
 			x: center.x,
-			y: center.y - radius * 5,
+			y: center.y - radius * 6,
 			z: center.z,
 		},
 	};
-	console.log(radius);
 </script>
 
 <div>

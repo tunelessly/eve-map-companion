@@ -1,5 +1,6 @@
 import eveUniverse from './universe-pretty.json';
 import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, type coordinates3D } from '../utils/geometry';
+import { forceSimulation, forceManyBody } from "d3-force";
 import { Color } from 'three';
 
 class Galaxy {
@@ -126,6 +127,23 @@ const createGraph = () => {
 
 }
 
+const forceGrapgh = (coordinates: coordinates3D[]): coordinates3D[] => {
+    const simulation = forceSimulation(coordinates)
+    .force("charge", forceManyBody().strength(-1))
+    .stop();
+
+    simulation.tick(300);
+
+    // this simulation is not 3d aware and thus we must remap the
+    // z and y axes to one another so that they'll display correctly 
+    // on a 3d environment
+
+    return coordinates.map(coordinate => {
+        return {x: coordinate.x, y: coordinate.z, z: coordinate.y}
+    });
+}
+
+
 export const generateGeometryData = () => {
     // createGraph();
     const coordinates: coordinates3D[] = [];
@@ -134,9 +152,7 @@ export const generateGeometryData = () => {
     const permissibleRegion = "Aridia";
 
     for (let system of eveUniverse.solarSystems) {
-        if (system.region != permissibleRegion) continue;
-
-
+        // if (system.region != permissibleRegion) continue;
         let systemColorRGB = HSV2RGB(sectoHSV(system.security));
         let coordinates3D = { x: system.x, y: system.y, z: system.z };
         let transformedColors = RGBtofloat(systemColorRGB);
@@ -144,7 +160,10 @@ export const generateGeometryData = () => {
         color.setRGB(transformedColors.r, transformedColors.g, transformedColors.b);
         colors.push(color.r, color.g, color.b);
     }
-    let positions = coordinatestoGeometry(coordinates);
+
+    const newCoordinates = forceGrapgh(coordinates);
+    const positions = coordinatestoGeometry(newCoordinates);
+    // const positions = coordinatestoGeometry(coordinates);
 
     return { positions, colors };
 };
