@@ -1,12 +1,12 @@
-export type RGB = {
+type RGB = {
     r: number,
     g: number,
     b: number
 }
 
-export type normalizedRGB = RGB;
+type normalizedRGB = RGB;
 
-export type HSV = {
+type HSV = {
     h: number,
     s: number,
     v: number
