@@ -1,6 +1,6 @@
 import eveUniverse from './universe-pretty.json';
 import { Galaxy } from './universe';
-import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry } from '../utils/geometry';
+import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry } from '../utils/geometry';
 
 export const generateGeometryData = () => {
     // createGraph();
@@ -15,14 +15,16 @@ export const generateGeometryData = () => {
     // galaxy.regionalSubway(region);
     // galaxy.galacticSubway();
     console.log(`Subway took: ${Date.now() - start}`);
-    const data = galaxy.getRegionCoordinatesandStatuses("Lonetrek");
+    const pointData = galaxy.getRegionCoordinatesandStatuses("Lonetrek");
+    const lineData = galaxy.getConnections("Lonetrek");
     // const data = galaxy.getGalaxyCoordinatesandStatuses();
-    const colors = data.map(x => x[1])
+
+    const pointPositions = coordinatestoGeometry(pointData.map(x => x[0]));
+    const pointColors = pointData.map(x => x[1])
         .map(sectoHSV)
         .map(HSV2RGB)
         .map(RGBtofloat)
         .flatMap(color => [color.r, color.g, color.b]);
-    const positions = coordinatestoGeometry(data.map(x => x[0]))
-
-    return { positions, colors };
+    const linePositions = linestoGeometry(lineData);
+    return { pointPositions, pointColors, linePositions };
 };

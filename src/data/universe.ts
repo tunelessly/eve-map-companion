@@ -39,19 +39,18 @@ class System {
     public readonly name: string;
     public readonly id: SystemID;
     public readonly regionName: RegionName;
-    private readonly _links: number[];
+    private readonly _links: number[] = [];
 
-    constructor(coordinates, securityStatus, regionName, id, name, links = []) {
+    constructor(coordinates, securityStatus, regionName, id, name) {
         this.coordinates = coordinates;
         this.securityStatus = securityStatus;
         this.regionName = regionName;
         this.id = id;
         this.name = name;
-        this._links = links;
     }
 
-    public addLink(systemID): void {
-        this._links.push[systemID];
+    public addLink(systemID: SystemID): void {
+        this._links.push(systemID);
     }
 
     public get links() {
@@ -185,6 +184,26 @@ export class Galaxy {
         // This is safe unless Object.keys is broken
         // so let's cut the crap
         return Object.keys(this._regions).flatMap(this.getRegionCoordinatesandStatuses);
+    }
+
+    private link2CoordinatePair = (from: SystemID, to: SystemID): Result<[coordinates3D, coordinates3D], string> => {
+        const origin = this.getSystem(from).map(s => s.coordinates);
+        const destination = this.getSystem(to).map(s => s.coordinates);
+        return Result.combine([origin, destination]);
+    }
+
+    public getConnections = (regionName: RegionName): [coordinates3D, coordinates3D][] => {
+        return this.getRegion(regionName)
+            .map(region => this.getSystemsFromRegion(region.name))
+            .andThen(systems => systems)
+            .map(systems => systems.flatMap(system => {
+                return (system.links.map((targetSystem: SystemID) => {
+                    return this.link2CoordinatePair(system.id, targetSystem);
+                }));
+            }))
+            .andThen(x => Result.combine(x))
+            .mapErr(e => console.log(`Error trying to produce connections: ${e}`))
+            .unwrapOr([])
     }
 
     public galacticSubway = (): void => {

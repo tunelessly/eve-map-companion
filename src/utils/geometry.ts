@@ -71,3 +71,16 @@ export const coordinatestoGeometry = (coordinates: coordinates3D[]): number[] =>
     }
     return retVal;
 }
+
+export const linestoGeometry = (coordinates: [coordinates3D, coordinates3D][]): number[][] => {
+    const retVal: number[][] = [];
+    for (let coords of coordinates) {
+        let originSystem = coords[0];
+        let targetSystem = coords[1];
+        // console.log(`origin: ${originSystem.x} ${originSystem.y} ${originSystem.z}`);
+        // console.log(`target: ${targetSystem.x} ${targetSystem.y} ${targetSystem.z}`);
+        retVal.push([originSystem.x, originSystem.y, originSystem.z]);
+        retVal.push([targetSystem.x, targetSystem.y, targetSystem.z]);
+    }
+    return retVal;
+}
