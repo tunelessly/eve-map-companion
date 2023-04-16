@@ -8,28 +8,43 @@
 	import type { PerspectiveCameraProperties } from "@threlte/core";
 	import {
 		Points,
-		Line,
+		LineSegments,
 		BufferGeometry,
 		PointsMaterial,
 		Float32BufferAttribute,
 		LineDashedMaterial,
+		Vector3,
 	} from "three";
 	import { generateGeometryData } from "../data/eveData";
-	import { onMount } from "svelte";
 
-	const geometry = new BufferGeometry();
-	const { positions, colors } = generateGeometryData();
-	geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
-	geometry.setAttribute("color", new Float32BufferAttribute(colors, 3));
-	geometry.scale(1000, 1000, 1000);
-	geometry.computeBoundingSphere();
-	geometry.center();
+	const { pointPositions, pointColors, linePositions } =
+		generateGeometryData();
+	const pointGeometry = new BufferGeometry();
+	const lineGeometry = new BufferGeometry();
 
-	let center = geometry.boundingSphere.center;
-	let radius = geometry.boundingSphere.radius;
+	const putaquepariu = linePositions.map((x) => new Vector3(...x));
+	lineGeometry.setFromPoints(putaquepariu);
+	lineGeometry.scale(1000, 1000, 1000);
+	lineGeometry.computeBoundingSphere();
+	lineGeometry.center();
+
+	pointGeometry.setAttribute(
+		"position",
+		new Float32BufferAttribute(pointPositions, 3)
+	);
+	pointGeometry.setAttribute(
+		"color",
+		new Float32BufferAttribute(pointColors, 3)
+	);
+	pointGeometry.scale(1000, 1000, 1000);
+	pointGeometry.boundingSphere = lineGeometry.boundingSphere;
+	pointGeometry.center();
+
+	let center = pointGeometry.boundingSphere.center;
+	let radius = pointGeometry.boundingSphere.radius;
 	let arbitraryPointScalingFactor = 25;
 
-	const material = new PointsMaterial({
+	const pointMaterial = new PointsMaterial({
 		size: radius / arbitraryPointScalingFactor,
 		vertexColors: true,
 	});
@@ -56,8 +71,8 @@
 		},
 	};
 
-	let line: Line = new Line(geometry, lineMaterial);
-	let points: Points = new Points(geometry, material);
+	let line: LineSegments = new LineSegments(lineGeometry, lineMaterial);
+	let points: Points = new Points(pointGeometry, pointMaterial);
 	line.computeLineDistances();
 </script>
 
