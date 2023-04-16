@@ -3,7 +3,6 @@ import {
     BufferGeometry,
     PointsMaterial,
     Float32BufferAttribute,
-    Sphere,
 } from "three";
 
 export const pointGeometryFromData = (positions: number[], colors: number[]): Points => {
@@ -20,10 +19,12 @@ export const pointGeometryFromData = (positions: number[], colors: number[]): Po
 
 
     let radius = pointGeometry.boundingSphere.radius;
-    let arbitraryPointScalingFactor = 40;
+    console.log(`Radius: ${radius}`);
+    const size = radius / 40;
     const pointMaterial = new PointsMaterial({
-        size: radius / arbitraryPointScalingFactor,
+        size: size,
         vertexColors: true,
+        opacity: 0.5
     });
 
     let points: Points = new Points(pointGeometry, pointMaterial);

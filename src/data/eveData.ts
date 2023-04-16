@@ -15,10 +15,10 @@ export const generateGeometryData = () => {
     // galaxy.regionalSubway(region);
     // galaxy.galacticSubway();
     console.log(`Subway took: ${Date.now() - start}`);
-    const pointData = galaxy.getRegionCoordinatesandStatuses(region);
-    // const pointData = galaxy.getGalaxyCoordinatesandStatuses();
-    // const lineData = galaxy.getConnections(region);
-    const lineData = [];
+    // const pointData = galaxy.getRegionCoordinatesandStatuses(region);
+    const lineData = galaxy.getConnections(region);
+    // const lineData = [];
+    const pointData = galaxy.getGalaxyCoordinatesandStatuses();
 
     const pointPositions = coordinatestoGeometry(pointData.map(x => x[0]));
     const pointColors = pointData.map(x => x[1])
