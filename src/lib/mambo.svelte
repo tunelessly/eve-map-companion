@@ -10,17 +10,13 @@
 
 	const world = generateWorld();
 	const cameraProperties = world.cameraSettings;
-	const center = world.boundingSphere.center;
 	const line = world.lines;
 	const points = world.points;
 </script>
 
 <div>
 	<Canvas>
-		<PerspectiveCamera
-			{...cameraProperties}
-			lookAt={{ x: center.x, y: center.y, z: center.z }}
-		>
+		<PerspectiveCamera {...cameraProperties} lookAt={{ x: 0, y: 0, z: 0 }}>
 			<OrbitControls enableZoom={true} />
 		</PerspectiveCamera>
 

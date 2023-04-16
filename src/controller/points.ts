@@ -6,7 +6,7 @@ import {
     Sphere,
 } from "three";
 
-export const pointGeometryFromData = (positions: number[], colors: number[]): [Points, Sphere] => {
+export const pointGeometryFromData = (positions: number[], colors: number[]): Points => {
     const pointGeometry = new BufferGeometry();
     pointGeometry.setAttribute(
         "position",
@@ -16,18 +16,18 @@ export const pointGeometryFromData = (positions: number[], colors: number[]): [P
         "color",
         new Float32BufferAttribute(colors, 3)
     );
-    pointGeometry.scale(1000, 1000, 1000);
-    pointGeometry.computeBoundingSphere();
-    pointGeometry.center();
+    // pointGeometry.scale(1000, 1000, 1000);
+    // pointGeometry.computeBoundingSphere();
+    // pointGeometry.center();
 
 
-    let radius = pointGeometry.boundingSphere.radius;
+    // let radius = pointGeometry.boundingSphere.radius;
     let arbitraryPointScalingFactor = 25;
     const pointMaterial = new PointsMaterial({
-        size: radius / arbitraryPointScalingFactor,
+        size: 1 / arbitraryPointScalingFactor,
         vertexColors: true,
     });
 
     let points: Points = new Points(pointGeometry, pointMaterial);
-    return [points, pointGeometry.boundingSphere];
+    return points;
 }

@@ -99,13 +99,15 @@ export class Galaxy {
     }
 
     private replaceSystem(system: System): void {
-        this._systems[system.name] = system;
+        this._systems[system.id] = system;
         this.getRegion(system.regionName).map(r => {
             // Presumes regions come before systems
             // TODO
             const index = this._regionName2Systems[r.name].findIndex(s => system.id === s.id);
+            if (index === -1) return err(`Could not find ${system.name} in ${r.name}`);
             this._regionName2Systems[r.name][index] = system;
-            this._systemID2Region[system.id] = r;
+            const s = this._regionName2Systems[r.name][index];
+            console.log(`Replaced ${index} ${s.name} ${s.coordinates.x} ${s.coordinates.y} ${s.coordinates.z}`);
         }).mapErr(e => console.log(`Error while replacing a system: ${e}`));
     }
 
@@ -255,7 +257,9 @@ export class Galaxy {
                             const systemID = system.id;
                             const systemName = system.name;
                             const links = system.links;
-                            const remappedSystem = new System(coordinates, securityStatus, regionName, systemID, systemName, links);
+                            const remappedSystem = new System(coordinates, securityStatus, regionName, systemID, systemName);
+                            // console.log(`Remapped ${remappedSystem.name} Coordinates: ${coordinates.x} ${coordinates.y} ${coordinates.z}`);
+                            links.forEach(link => remappedSystem.addLink(link));
                             this.replaceSystem(remappedSystem);
                         })
                         .mapErr(e => console.log(`Error trying to replace systems: ${e}`));

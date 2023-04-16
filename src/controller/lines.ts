@@ -9,9 +9,9 @@ export const lineGeometryFromData = (positions: number[][]): LineSegments => {
     const lineGeometry = new BufferGeometry();
     const positionsAsVector3 = positions.map((x) => new Vector3(...x));
     lineGeometry.setFromPoints(positionsAsVector3);
-    lineGeometry.scale(1000, 1000, 1000);
-    lineGeometry.computeBoundingSphere();
-    lineGeometry.center();
+    // lineGeometry.scale(1000, 1000, 1000);
+    // lineGeometry.computeBoundingSphere();
+    // lineGeometry.center();
 
     const lineMaterial = new LineDashedMaterial({
         linewidth: 101,
@@ -22,5 +22,6 @@ export const lineGeometryFromData = (positions: number[][]): LineSegments => {
     });
 
     let line: LineSegments = new LineSegments(lineGeometry, lineMaterial);
+    line.computeLineDistances();
     return line;
 }
