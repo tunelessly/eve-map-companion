@@ -16,7 +16,10 @@
 
 <div>
 	<Canvas>
-		<PerspectiveCamera {...cameraProperties} lookAt={{ x: 0, y: 0, z: 0 }}>
+		<PerspectiveCamera
+			{...cameraProperties}
+			lookAt={points.geometry.boundingSphere.center}
+		>
 			<OrbitControls enableZoom={true} />
 		</PerspectiveCamera>
 

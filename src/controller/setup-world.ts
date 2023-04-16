@@ -18,21 +18,21 @@ export const generateWorld = (): WorldSettings => {
 
     const points = pointGeometryFromData(pointPositions, pointColors);
     const pointsGeometry = points.geometry;
-    pointsGeometry.computeBoundingSphere();
-    const pointsCenterOriginal = pointsGeometry.boundingSphere.center.clone();
+    const v0 = pointsGeometry.boundingSphere.center;
+    const CenterB = new Vector3(v0.x, v0.y, v0.z);
     pointsGeometry.center();
-    const pointsCenterAfter = pointsGeometry.boundingSphere.center.clone();
-    const diff = pointsCenterAfter.sub(pointsCenterOriginal);
-
-
+    const v1 = pointsGeometry.boundingSphere.center;
+    const CenterA = new Vector3(v1.x, v1.y, v1.z)
+    const diff = new Vector3(
+        CenterA.x - CenterB.x,
+        CenterA.y - CenterA.y,
+        CenterA.z - CenterB.z
+    );
 
     const lines = lineGeometryFromData(linePositions);
     const linesGeometry = lines.geometry;
     linesGeometry.translate(diff.x, diff.y, diff.z);
 
-
-
-    const cameraSettings = getCameraProperties(pointsCenterAfter, pointsGeometry.boundingSphere.radius);
-
+    const cameraSettings = getCameraProperties(CenterA, pointsGeometry.boundingSphere.radius);
     return { points, lines, cameraSettings };
 }

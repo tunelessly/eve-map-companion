@@ -13,7 +13,7 @@ export const getCameraProperties = (center: Vector3, radius: number): Perspectiv
         useCamera: true,
         position: {
             x: center.x,
-            y: center.y - radius * 5,
+            y: center.y - radius * 6,
             z: center.z,
         },
     };

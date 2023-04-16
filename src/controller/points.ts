@@ -20,7 +20,7 @@ export const pointGeometryFromData = (positions: number[], colors: number[]): Po
 
 
     let radius = pointGeometry.boundingSphere.radius;
-    let arbitraryPointScalingFactor = 10;
+    let arbitraryPointScalingFactor = 40;
     const pointMaterial = new PointsMaterial({
         size: radius / arbitraryPointScalingFactor,
         vertexColors: true,
