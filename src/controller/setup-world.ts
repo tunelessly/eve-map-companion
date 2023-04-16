@@ -1,4 +1,4 @@
-import { generateGeometryData } from "../data/eveData";
+import { generateGeometryData } from "../model/data-generator";
 import { pointGeometryFromData } from "./points";
 import { lineGeometryFromData } from "./lines";
 import { getCameraProperties } from "./camera";
