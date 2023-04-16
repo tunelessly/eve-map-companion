@@ -9,6 +9,7 @@ export const lineGeometryFromData = (positions: number[][]): LineSegments => {
     const lineGeometry = new BufferGeometry();
     const positionsAsVector3 = positions.map((x) => new Vector3(...x));
     lineGeometry.setFromPoints(positionsAsVector3);
+    lineGeometry.translate(0, 0, 0);
     // lineGeometry.scale(1000, 1000, 1000);
     // lineGeometry.computeBoundingSphere();
     // lineGeometry.center();

@@ -16,15 +16,13 @@ export const pointGeometryFromData = (positions: number[], colors: number[]): Po
         "color",
         new Float32BufferAttribute(colors, 3)
     );
-    // pointGeometry.scale(1000, 1000, 1000);
-    // pointGeometry.computeBoundingSphere();
-    // pointGeometry.center();
+    pointGeometry.computeBoundingSphere();
 
 
-    // let radius = pointGeometry.boundingSphere.radius;
-    let arbitraryPointScalingFactor = 25;
+    let radius = pointGeometry.boundingSphere.radius;
+    let arbitraryPointScalingFactor = 10;
     const pointMaterial = new PointsMaterial({
-        size: 1 / arbitraryPointScalingFactor,
+        size: radius / arbitraryPointScalingFactor,
         vertexColors: true,
     });
 

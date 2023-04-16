@@ -3,7 +3,7 @@ import { pointGeometryFromData } from "./points";
 import { lineGeometryFromData } from "./lines";
 import { getCameraProperties } from "./camera";
 import type { Points, LineSegments } from "three";
-import { Group } from "three";
+import { Vector3 } from "three";
 import type { PerspectiveCameraProperties } from "@threlte/core";
 
 export type WorldSettings = {
@@ -16,12 +16,23 @@ export const generateWorld = (): WorldSettings => {
     const { pointPositions, pointColors, linePositions } =
         generateGeometryData();
 
-    const group = new Group();
     const points = pointGeometryFromData(pointPositions, pointColors);
-    const lines = lineGeometryFromData(linePositions);
-    group.add(lines);
-    group.add(points);
-    const cameraSettings = getCameraProperties();
+    const pointsGeometry = points.geometry;
+    pointsGeometry.computeBoundingSphere();
+    const pointsCenterOriginal = pointsGeometry.boundingSphere.center.clone();
+    pointsGeometry.center();
+    const pointsCenterAfter = pointsGeometry.boundingSphere.center.clone();
+    const diff = pointsCenterAfter.sub(pointsCenterOriginal);
 
-    return { points, lines, cameraSettings }
+
+
+    const lines = lineGeometryFromData(linePositions);
+    const linesGeometry = lines.geometry;
+    linesGeometry.translate(diff.x, diff.y, diff.z);
+
+
+
+    const cameraSettings = getCameraProperties(pointsCenterAfter, pointsGeometry.boundingSphere.radius);
+
+    return { points, lines, cameraSettings };
 }
