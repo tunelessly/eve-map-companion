@@ -16,11 +16,14 @@ export const generateWorld = (): WorldSettings => {
     const { pointPositions, pointColors, linePositions } =
         generateGeometryData();
 
-    const points = pointGeometryFromData(pointPositions, pointColors);
+    const scalingFactor = 1000;
+    const points = pointGeometryFromData(pointPositions, pointColors, scalingFactor);
     const pointsGeometry = points.geometry;
+    pointsGeometry.computeBoundingSphere();
 
     const lines = lineGeometryFromData(linePositions);
     const linesGeometry = lines.geometry;
+    linesGeometry.computeBoundingSphere();
 
     const v0 = pointsGeometry.boundingSphere.center;
     const CenterB = new Vector3(v0.x, v0.y, v0.z);
@@ -35,6 +38,10 @@ export const generateWorld = (): WorldSettings => {
 
     linesGeometry.translate(diff.x, diff.y, diff.z);
 
+    linesGeometry.scale(scalingFactor, scalingFactor, scalingFactor);
+    linesGeometry.computeBoundingSphere();
+    pointsGeometry.scale(scalingFactor, scalingFactor, scalingFactor);
+    pointsGeometry.computeBoundingSphere();
 
     const cameraSettings = getCameraProperties(CenterA, pointsGeometry.boundingSphere.radius);
     return { points, lines, cameraSettings };

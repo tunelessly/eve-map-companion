@@ -189,9 +189,21 @@ export class Galaxy {
     }
 
     private link2CoordinatePair = (from: SystemID, to: SystemID): Result<[coordinates3D, coordinates3D], string> => {
-        const origin = this.getSystem(from).map(s => s.coordinates);
-        const destination = this.getSystem(to).map(s => s.coordinates);
-        return Result.combine([origin, destination]);
+        const origin = this.getSystem(from);
+        const destination = this.getSystem(to);
+        return Result.combine([origin, destination])
+            .map(x => {
+                const source = x[0];
+                const target = x[1];
+                source.coordinates.extra = source.name;
+                target.coordinates.extra = target.name;
+                if (source.regionName == target.regionName) {
+                    return [source.coordinates, target.coordinates];
+                }
+                else {
+                    return [undefined, undefined]; // TODO this is hacky
+                }
+            });
     }
 
     public getConnections = (regionName: RegionName): [coordinates3D, coordinates3D][] => {
