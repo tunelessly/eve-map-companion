@@ -1,7 +1,6 @@
 import eveUniverse from './universe-pretty.json';
 import { Galaxy } from './universe';
-import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, type coordinates3D } from '../utils/geometry';
-import { Color } from 'three';
+import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry } from '../utils/geometry';
 
 export const generateGeometryData = () => {
     // createGraph();
@@ -13,11 +12,11 @@ export const generateGeometryData = () => {
     console.log(`Populate Galaxy took: ${Date.now() - start}`);
 
     start = Date.now();
-    // galaxy.subway(region);
-    galaxy.galacticSubway();
+    // galaxy.regionalSubway(region);
+    // galaxy.galacticSubway();
     console.log(`Subway took: ${Date.now() - start}`);
-    // const data = galaxy.getRegionCoordinatesandStatuses(region);
-    const data = galaxy.getGalaxyCoordinatesandStatuses();
+    const data = galaxy.getRegionCoordinatesandStatuses("Lonetrek");
+    // const data = galaxy.getGalaxyCoordinatesandStatuses();
     const colors = data.map(x => x[1])
         .map(sectoHSV)
         .map(HSV2RGB)

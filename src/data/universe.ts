@@ -1,7 +1,6 @@
 import type { coordinates3D } from '../utils/geometry';
 import { forceSimulation, forceManyBody } from "d3-force";
 import { ok, err, Result } from "neverthrow";
-import { set_store_value } from 'svelte/internal';
 
 type RegionName = string;
 type SystemID = number;
@@ -62,7 +61,7 @@ class System {
 
 class Region {
     private readonly _id: string;
-    private readonly _name: string;
+    private readonly _name: RegionName;
 
     constructor(id, name) {
         this._id = id;
@@ -161,40 +160,21 @@ export class Galaxy {
             this.addSystem(system);
         }
 
-        //
-        // Extremely slow for obvious reasons
-        //
-        // for (let jump of sourceData.jumps) {
-        //     for (let regionID in this.regions) {
-        //         this.getRegion(regionID).andThen(region => {
-        //             return region.getSystem(jump.from);
-        //         }).map(system => {
-        //             system.addLink(jump.to);
-        //         }).mapErr(e => {
-        //             console.log(`Error attempting to add jump to system: ${e}`);
-        //         });
-        //     }
-        // }
-
-        // Object.keys(this.regions).forEach(regionName => {
-        //     console.log(`Region: ${regionName}`);
-        //     Object.keys(this.getRegion(regionName).systems).forEach(systemName => {
-        //         console.log(`\t${systemName}`);
-        //     });
-        // });
-
+        for (let jump of sourceData.jumps) {
+            this.getSystem(jump.from)
+                .map(system => {
+                    system.addLink(jump.to);
+                }).mapErr(e => {
+                    console.log(`Error attempting to add jump to system: ${e}`);
+                });
+        }
     }
 
     private produceSystemsThings<T>(regionName: RegionName, thing: (arg: System) => T): T[] {
-        // TODO: Result.combine can actually fail and it will fail to produce a whole region
-        // Don't know how big a worry this is, are there really going to be regions with broken
-        // system references?
-
         return this.getSystemsFromRegion(regionName)
             .map(systems => systems.map(thing))
             .mapErr(e => `Error retreiving a region's systems: ${e} `)
             .unwrapOr([]);
-
     }
 
     public getRegionCoordinatesandStatuses = (regionName: string): [coordinates3D, number][] => {

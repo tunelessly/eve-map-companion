@@ -1,12 +1,21 @@
 <script lang="ts">
-	import { Canvas, OrbitControls, T, PerspectiveCamera } from "@threlte/core";
+	import {
+		Canvas,
+		OrbitControls,
+		PerspectiveCamera,
+		Three,
+	} from "@threlte/core";
 	import type { PerspectiveCameraProperties } from "@threlte/core";
 	import {
+		Points,
+		Line,
 		BufferGeometry,
 		PointsMaterial,
 		Float32BufferAttribute,
+		LineDashedMaterial,
 	} from "three";
 	import { generateGeometryData } from "../data/eveData";
+	import { onMount } from "svelte";
 
 	const geometry = new BufferGeometry();
 	const { positions, colors } = generateGeometryData();
@@ -18,11 +27,19 @@
 
 	let center = geometry.boundingSphere.center;
 	let radius = geometry.boundingSphere.radius;
-	let arbitraryMaterialScalingFactor = 40;
+	let arbitraryPointScalingFactor = 25;
 
 	const material = new PointsMaterial({
-		size: radius / arbitraryMaterialScalingFactor,
+		size: radius / arbitraryPointScalingFactor,
 		vertexColors: true,
+	});
+
+	const lineMaterial = new LineDashedMaterial({
+		linewidth: 101,
+		color: 0x42255e,
+		scale: 0.1,
+		dashSize: 0.3,
+		gapSize: 0.1,
 	});
 
 	const cameraProperties: PerspectiveCameraProperties = {
@@ -34,10 +51,14 @@
 		useCamera: true,
 		position: {
 			x: center.x,
-			y: center.y - radius * 6,
+			y: center.y - radius * 5,
 			z: center.z,
 		},
 	};
+
+	let line: Line = new Line(geometry, lineMaterial);
+	let points: Points = new Points(geometry, material);
+	line.computeLineDistances();
 </script>
 
 <div>
@@ -49,7 +70,8 @@
 			<OrbitControls enableZoom={true} />
 		</PerspectiveCamera>
 
-		<T.Points {geometry} {material} />
+		<Three type={line} />
+		<Three type={points} />
 	</Canvas>
 </div>
 
