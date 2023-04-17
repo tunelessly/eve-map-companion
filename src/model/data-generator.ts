@@ -4,7 +4,7 @@ import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry }
 
 export const generateGeometryData = () => {
     // createGraph();
-    const region = "Pochven";
+    const region = "Aridia";
     const galaxy: Galaxy = new Galaxy();
 
     let start = Date.now();
@@ -16,8 +16,8 @@ export const generateGeometryData = () => {
     // galaxy.galacticSubway();
     console.log(`Subway took: ${Date.now() - start}`);
     // const pointData = galaxy.getRegionCoordinatesandStatuses(region);
-    const lineData = galaxy.getConnections(region);
-    // const lineData = [];
+    // const lineData = galaxy.getConnections(region);
+    const lineData = [];
     const pointData = galaxy.getGalaxyCoordinatesandStatuses();
 
     const pointPositions = coordinatestoGeometry(pointData.map(x => x[0]));
@@ -26,6 +26,7 @@ export const generateGeometryData = () => {
         .map(HSV2RGB)
         .map(RGBtofloat)
         .flatMap(color => [color.r, color.g, color.b]);
+    console.dir(pointColors);
     const linePositions = linestoGeometry(lineData);
     return { pointPositions, pointColors, linePositions };
 };

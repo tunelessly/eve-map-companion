@@ -4,6 +4,7 @@ import type { Vector3 } from "three";
 
 export const getCameraProperties = (center: Vector3, radius: number): PerspectiveCameraProperties => {
 
+    console.log(`Bounding sphere radius: ${radius}`);
     const cameraProperties: PerspectiveCameraProperties = {
         near: 0.01,
         far: radius * 20,

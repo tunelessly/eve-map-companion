@@ -12,12 +12,29 @@ export type WorldSettings = {
     cameraSettings: PerspectiveCameraProperties
 }
 
+const magnitude = (x: number): number => {
+    return Math.pow(10, Math.floor(Math.log10(x)));
+}
+
 export const generateWorld = (): WorldSettings => {
     const { pointPositions, pointColors, linePositions } =
         generateGeometryData();
 
-    const scalingFactor = 1000;
-    const points = pointGeometryFromData(pointPositions, pointColors, scalingFactor);
+    const dataMagnitude = pointPositions.reduce((acc, curr) => {
+        const m = magnitude(curr);
+        if (m >= acc) {
+            return m;
+        }
+        else {
+            return acc;
+        }
+    }, 1);
+
+    const magnitudeDiffFrom100 = Math.log10(100) - Math.log10(dataMagnitude);
+    const scalingFactor = Math.pow(10, magnitudeDiffFrom100);
+    console.log(`Data: ${dataMagnitude} Scaling factor: ${scalingFactor}`);
+
+    const points = pointGeometryFromData(pointPositions, pointColors, Math.max(dataMagnitude, 10));
     const pointsGeometry = points.geometry;
     pointsGeometry.computeBoundingSphere();
 
