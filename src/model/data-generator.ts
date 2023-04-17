@@ -4,7 +4,7 @@ import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry }
 
 export const generateGeometryData = () => {
     // createGraph();
-    const region = "Aridia";
+    const region = "Lonetrek";
     const galaxy: Galaxy = new Galaxy();
 
     let start = Date.now();

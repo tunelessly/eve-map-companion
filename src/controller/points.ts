@@ -1,12 +1,10 @@
 import {
-    Points,
     BufferGeometry,
-    PointsMaterial,
     Float32BufferAttribute,
+    PointsMaterial
 } from "three";
 
-export const pointGeometryFromData = (positions: number[], colors: number[], radiusMagnitude: number): Points => {
-    const numberofPoints = positions.length / 3;
+export const pointGeometryFromData = (positions: number[], colors: number[]): BufferGeometry => {
     const pointGeometry = new BufferGeometry();
     pointGeometry.setAttribute(
         "position",
@@ -17,16 +15,15 @@ export const pointGeometryFromData = (positions: number[], colors: number[], rad
         new Float32BufferAttribute(colors, 3)
     );
 
+    return pointGeometry;
+}
 
-    // const size = scalingFactor / ((numberofPoints < 100) ? 50 : 100);
-    // const size = 5 * scalingFactor / numberofPoints;
-    console.log(`Size: ${radiusMagnitude / Math.sqrt(numberofPoints)}, number of things: ${positions.length / 3}`);
+export const materialFromData = (boundingSphereRadius: number): PointsMaterial => {
+    console.log(`Bounding sphere radius after: ${boundingSphereRadius}`);
     const pointMaterial = new PointsMaterial({
-        size: radiusMagnitude / Math.sqrt(numberofPoints),
+        size: boundingSphereRadius,
         vertexColors: true,
         opacity: 1
     });
-
-    let points: Points = new Points(pointGeometry, pointMaterial);
-    return points;
+    return pointMaterial;
 }
