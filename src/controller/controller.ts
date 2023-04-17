@@ -3,7 +3,7 @@ import { pointGeometryFromData, materialFromData } from "./points";
 import { lineGeometryFromData } from "./lines";
 import { getCameraProperties } from "./camera";
 import { Points, type LineSegments } from "three";
-import { Vector3, PointsMaterial } from "three";
+import { Vector3 } from "three";
 import type { PerspectiveCameraProperties } from "@threlte/core";
 
 export type WorldSettings = {
@@ -59,7 +59,7 @@ export const generateWorld = (): WorldSettings => {
     pointGeometry.scale(scalingFactor, scalingFactor, scalingFactor);
     pointGeometry.computeBoundingSphere();
 
-    const pointMaterial = materialFromData(pointGeometry.boundingSphere.radius / (5 * Math.log(pointPositions.length)));
+    const pointMaterial = materialFromData(pointGeometry.boundingSphere.radius / (4 * Math.log(pointPositions.length / 3)));
     const points = new Points(pointGeometry, pointMaterial)
     const cameraSettings = getCameraProperties(CenterA, pointGeometry.boundingSphere.radius);
 

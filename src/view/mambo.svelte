@@ -6,7 +6,7 @@
 		Three,
 	} from "@threlte/core";
 
-	import { generateWorld } from "../controller/setup-world";
+	import { generateWorld } from "../controller/controller";
 
 	const world = generateWorld();
 	const cameraProperties = world.cameraSettings;
