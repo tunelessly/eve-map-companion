@@ -2,29 +2,59 @@
 	import {
 		Canvas,
 		OrbitControls,
+		type PerspectiveCameraProperties,
 		PerspectiveCamera,
 		Three,
 	} from "@threlte/core";
-
+	import { Points, LineSegments, BufferGeometry } from "three";
 	import { generateWorld } from "../controller/controller";
+	import { writable } from "svelte/store";
 
-	const world = generateWorld();
-	const cameraProperties = world.cameraSettings;
-	const line = world.lines;
-	const points = world.points;
+	const init = () => {
+		const world = generateWorld();
+		const cameraProperties = world.cameraSettings;
+		const lines = world.lines;
+		const points = world.points;
+		return { cameraProperties, lines, points };
+	};
+
+	const store = writable({
+		cameraProperties: {},
+		points: new Points(
+			(() => {
+				const a = new BufferGeometry();
+				a.computeBoundingSphere();
+				return a;
+			})()
+		),
+		lines: new LineSegments(new BufferGeometry()),
+	});
+
+	function generateCanvas() {
+		let cameraProperties: PerspectiveCameraProperties;
+		let points: Points;
+		let lines: LineSegments;
+		({ cameraProperties, points, lines } = init());
+		store.set({
+			cameraProperties,
+			points,
+			lines,
+		});
+	}
 </script>
 
 <div>
+	<button on:click={generateCanvas}> Click for space magic! </button>
 	<Canvas>
 		<PerspectiveCamera
-			{...cameraProperties}
-			lookAt={points.geometry.boundingSphere.center}
+			{...$store.cameraProperties}
+			lookAt={$store.points.geometry.boundingSphere.center}
 		>
 			<OrbitControls enableZoom={true} />
 		</PerspectiveCamera>
 
-		<Three type={line} />
-		<Three type={points} />
+		<Three type={$store.lines} />
+		<Three type={$store.points} />
 	</Canvas>
 </div>
 
