@@ -1,4 +1,4 @@
-import { getGalaxyGeometryData, getRegionGeometryData } from "../model/galaxy-interface";
+import { getGalaxyGeometryData, getRegionGeometryData, getAllRegionNames } from "../model/galaxy-interface";
 import { pointGeometryFromData, materialFromData } from "./points";
 import { lineGeometryFromData } from "./lines";
 import { getCameraProperties } from "./camera";
@@ -16,10 +16,22 @@ const magnitude = (x: number): number => {
     return Math.pow(10, Math.floor(Math.log10(x)));
 }
 
-export const data2Geometry = (): WorldSettings => {
+export const getRegionNames = (): string[] => {
+    return getAllRegionNames();
+}
+
+export const generateGalaxy = (): WorldSettings => {
     const { pointPositions, pointColors, linePositions } =
         getGalaxyGeometryData();
-    // getRegionGeometryData("Aridia", true, false);
+    return data2Geometry(pointPositions, pointColors, linePositions);
+}
+
+export const generateRegion = (regionName: string) => {
+    const { pointPositions, pointColors, linePositions } = getRegionGeometryData(regionName, true, false);
+    return data2Geometry(pointPositions, pointColors, linePositions);
+}
+
+const data2Geometry = (pointPositions: number[], pointColors: number[], linePositions: number[][]): WorldSettings => {
 
     const dataMagnitude = pointPositions.reduce((acc, curr) => {
         const m = magnitude(curr);

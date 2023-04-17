@@ -68,7 +68,6 @@ export const RGBtofloat = (rgb: RGB): normalizedRGB => {
 export const coordinatestoGeometry = (coordinates: coordinates3D[]): number[] => {
     let retVal: number[] = [];
     for (let coords of coordinates) {
-        console.log(coords.x, coords.y, coords.z);
         retVal.push(coords.x, coords.y, coords.z);
     }
     return retVal;

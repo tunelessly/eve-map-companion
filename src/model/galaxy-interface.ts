@@ -1,4 +1,4 @@
-import eveUniverse from './universe-pretty-1681768874229.json';
+import eveUniverse from './universe-pretty-1681772457983.json';
 import { Galaxy } from './galaxy';
 import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry, type coordinates3D } from '../utils/geometry';
 
