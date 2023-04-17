@@ -68,36 +68,11 @@ export const RGBtofloat = (rgb: RGB): normalizedRGB => {
 export const coordinatestoGeometry = (coordinates: coordinates3D[]): number[] => {
     let retVal: number[] = [];
     for (let coords of coordinates) {
+        console.log(coords.x, coords.y, coords.z);
         retVal.push(coords.x, coords.y, coords.z);
     }
     return retVal;
 }
-
-// const dothing = (obj) => {
-//     const referencedSystems = {};
-//     const notReferencedSystems = {};
-//     for (let originSystem in obj) {
-//         let originWasFound = false;
-//         for (let candidate in obj) {
-//             let targetSystems = obj[candidate];
-//             for (var i = 0; i < targetSystems.length; i++) {
-//                 let target = targetSystems[i];
-//                 if (originSystem == target) {
-//                     if (!(originSystem in referencedSystems)) referencedSystems[originSystem] = 0
-//                     referencedSystems[originSystem] += 1;
-//                     originWasFound = true;
-//                     break;
-//                 }
-//             }
-//         }
-//         if (!originWasFound) {
-//             if (!(originSystem in notReferencedSystems)) notReferencedSystems[originSystem] = 0
-//             notReferencedSystems[originSystem] += 1;
-//         }
-//     }
-//     console.dir(referencedSystems);
-//     console.dir(notReferencedSystems);
-// }
 
 export const linestoGeometry = (coordinates: [coordinates3D, coordinates3D][]): number[][] => {
     const retVal: number[][] = [];
@@ -105,16 +80,9 @@ export const linestoGeometry = (coordinates: [coordinates3D, coordinates3D][]): 
     for (let coords of coordinates) {
         let originSystem = coords[0];
         let targetSystem = coords[1];
-        // console.log(`origin: ${originSystem.x} ${originSystem.y} ${originSystem.z}`);
-        // console.log(`target: ${targetSystem.x} ${targetSystem.y} ${targetSystem.z}`);
         if (originSystem === undefined && targetSystem === undefined) continue; // TODO
-        // if (!(originSystem.extra in toPrint)) toPrint[originSystem.extra] = [];
-        // toPrint[originSystem.extra].push(targetSystem.extra);
-        // console.log(`${originSystem.extra} - ${targetSystem.extra}`);
         retVal.push([originSystem.x, originSystem.y, originSystem.z]);
         retVal.push([targetSystem.x, targetSystem.y, targetSystem.z]);
     }
-    // console.dir(toPrint);
-    // dothing(toPrint);
     return retVal;
 }

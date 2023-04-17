@@ -19,7 +19,7 @@ const magnitude = (x: number): number => {
 export const data2Geometry = (): WorldSettings => {
     const { pointPositions, pointColors, linePositions } =
         getGalaxyGeometryData();
-    // getRegionGeometryData("Aridia", true, true);
+    // getRegionGeometryData("Aridia", true, false);
 
     const dataMagnitude = pointPositions.reduce((acc, curr) => {
         const m = magnitude(curr);
