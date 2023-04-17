@@ -14,5 +14,6 @@ export default defineConfig({
   ],
   ssr: {
     noExternal: ["three", "troika-three-text"]
-  }
+  },
+  base: "/eve-map-companion/",
 });
