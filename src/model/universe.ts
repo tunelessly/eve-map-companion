@@ -77,11 +77,23 @@ class Region {
 }
 
 export class Galaxy {
+    private static _instance: Galaxy;
     private readonly _name: String = "New Eden";
     private readonly _regions: Record<RegionName, Region> = {};
     private readonly _systems: Record<SystemID, System> = {};
     private readonly _regionName2Systems: Record<RegionName, System[]> = {};
     private readonly _systemID2Region: Record<SystemID, Region> = {};
+    private _wasInitialized: boolean = false;
+
+    public get wasInitialized(): boolean {
+        return this._wasInitialized;
+    }
+
+    private constructor() { }
+
+    public static get instance(): Galaxy {
+        return this._instance || (this._instance = new this());
+    }
 
     private addRegion(region: Region): void {
         this._regions[region.name] = region;
@@ -111,6 +123,9 @@ export class Galaxy {
         }).mapErr(e => console.log(`Error while replacing a system: ${e}`));
     }
 
+    public getAllRegionNames = (): string[] => {
+        return Object.keys(this._regions).sort();
+    }
 
     private getRegion(regionID: string): Result<Region, string> {
         const region = this._regions[regionID];
@@ -169,6 +184,7 @@ export class Galaxy {
                     console.log(`Error attempting to add jump to system: ${e}`);
                 });
         }
+        this._wasInitialized = true;
     }
 
     private produceSystemsThings<T>(regionName: RegionName, thing: (arg: System) => T): T[] {

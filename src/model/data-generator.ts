@@ -1,32 +1,50 @@
 import eveUniverse from './universe-pretty.json';
 import { Galaxy } from './universe';
-import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry } from '../utils/geometry';
+import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry, type coordinates3D } from '../utils/geometry';
 
-export const generateGeometryData = () => {
-    // createGraph();
-    const region = "Pochven";
-    const galaxy: Galaxy = new Galaxy();
-
+const initGalaxy = () => {
     let start = Date.now();
-    galaxy.populateGalaxy(eveUniverse);
-    console.log(`Populate Galaxy took: ${Date.now() - start}`);
+    Galaxy.instance.populateGalaxy(eveUniverse);
+    console.log(`Galaxy creation took: ${Date.now() - start}ms`);
+}
+initGalaxy();
 
-    start = Date.now();
-    // galaxy.regionalSubway(region);
-    // galaxy.galacticSubway();
-    console.log(`Subway took: ${Date.now() - start}`);
-    // const pointData = galaxy.getRegionCoordinatesandStatuses(region);
-    // const lineData = galaxy.getConnections(region);
-    const lineData = [];
-    const pointData = galaxy.getGalaxyCoordinatesandStatuses();
+const coordinates2Three = (coordinates: coordinates3D[]): number[] => {
+    return coordinatestoGeometry(coordinates);
+}
 
-    const pointPositions = coordinatestoGeometry(pointData.map(x => x[0]));
-    const pointColors = pointData.map(x => x[1])
+const security2Color = (securityStatuses: number[]): number[] => {
+    return securityStatuses
         .map(sectoHSV)
         .map(HSV2RGB)
         .map(RGBtofloat)
         .flatMap(color => [color.r, color.g, color.b]);
-    console.dir(pointColors);
-    const linePositions = linestoGeometry(lineData);
-    return { pointPositions, pointColors, linePositions };
-};
+}
+
+export const getAllRegionNames = () => {
+    return Galaxy.instance.getAllRegionNames();
+}
+
+export const getRegionGeometryData = (region: string, withLines: boolean = false, asSubway: boolean = false) => {
+    const galaxy = Galaxy.instance;
+    if (asSubway) galaxy.regionalSubway(region);
+    const linePositions = withLines ? linestoGeometry(galaxy.getConnections(region)) : [];
+    const data = galaxy.getRegionCoordinatesandStatuses(region);
+
+    const pointPositions = coordinates2Three(data.map(x => x[0]));
+    const pointColors = security2Color(data.map(x => x[1]));
+
+    return { pointPositions, pointColors, linePositions }
+}
+
+export const getGalaxyGeometryData = (asSubway: boolean = false) => {
+    const galaxy = Galaxy.instance;
+    const linePositions = []
+    if (asSubway) galaxy.galacticSubway();
+    const data = galaxy.getGalaxyCoordinatesandStatuses()
+
+    const pointPositions = coordinates2Three(data.map(x => x[0]));
+    const pointColors = security2Color(data.map(x => x[1]));
+
+    return { pointPositions, pointColors, linePositions }
+}

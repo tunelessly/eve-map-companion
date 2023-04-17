@@ -1,4 +1,4 @@
-import { generateGeometryData } from "../model/data-generator";
+import { getGalaxyGeometryData, getRegionGeometryData } from "../model/data-generator";
 import { pointGeometryFromData, materialFromData } from "./points";
 import { lineGeometryFromData } from "./lines";
 import { getCameraProperties } from "./camera";
@@ -16,9 +16,9 @@ const magnitude = (x: number): number => {
     return Math.pow(10, Math.floor(Math.log10(x)));
 }
 
-export const generateWorld = (): WorldSettings => {
+export const data2Geometry = (): WorldSettings => {
     const { pointPositions, pointColors, linePositions } =
-        generateGeometryData();
+        getRegionGeometryData("Aridia", true, true);
 
     const dataMagnitude = pointPositions.reduce((acc, curr) => {
         const m = magnitude(curr);

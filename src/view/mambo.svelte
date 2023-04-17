@@ -7,11 +7,11 @@
 		Three,
 	} from "@threlte/core";
 	import { Points, LineSegments, BufferGeometry } from "three";
-	import { generateWorld } from "../controller/controller";
+	import { data2Geometry } from "../controller/controller";
 	import { writable } from "svelte/store";
 
 	const init = () => {
-		const world = generateWorld();
+		const world = data2Geometry();
 		const cameraProperties = world.cameraSettings;
 		const lines = world.lines;
 		const points = world.points;
