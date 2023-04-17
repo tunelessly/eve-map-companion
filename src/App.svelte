@@ -1,5 +1,5 @@
 <script lang="ts">
-  import App from "./view/mambo.svelte";
+  import App from "./view/Canvas.svelte";
 </script>
 
 <App />
