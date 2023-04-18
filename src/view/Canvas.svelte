@@ -11,18 +11,11 @@
 		getRegionNames,
 		generateGalaxy,
 		generateRegion,
-		type WorldSettings,
 	} from "../controller/controller";
 	import { writable } from "svelte/store";
 
-	const init = () => {
-		const world = generateGalaxy();
-		const cameraProperties = world.cameraSettings;
-		const lines = world.lines;
-		const points = world.points;
-		return { cameraProperties, lines, points };
-	};
-
+	let selectedRegion = "-";
+	let regionNames = [];
 	const store = writable({
 		cameraProperties: {},
 		points: new Points(
@@ -33,33 +26,31 @@
 			})()
 		),
 		lines: new LineSegments(new BufferGeometry()),
-		regionNames: [],
+		regionNames: regionNames,
 	});
 
-	function generateCanvas() {
-		let cameraProperties: PerspectiveCameraProperties;
-		let points: Points;
-		let lines: LineSegments;
-		let regionNames: string[] = getRegionNames();
-		console.dir(regionNames);
-		({ cameraProperties, points, lines } = init());
+	const init = () => {
+		const world = generateGalaxy();
+		const cameraProperties = world.cameraSettings;
+		const lines = world.lines;
+		const points = world.points;
+		regionNames = getRegionNames();
 		store.set({
 			cameraProperties,
 			points,
 			lines,
 			regionNames,
 		});
-	}
+	};
 
-	let selectedRegion = "-";
+	init();
+
 	function onSelectionChange(selectedRegion: string) {
 		const settings = generateRegion(selectedRegion);
 		const cameraProperties: PerspectiveCameraProperties =
 			settings.cameraSettings;
 		const points: Points = settings.points;
 		const lines: LineSegments = settings.lines;
-		const regionNames: string[] = getRegionNames();
-		console.dir(regionNames);
 		store.set({
 			cameraProperties,
 			points,
@@ -70,7 +61,6 @@
 </script>
 
 <div>
-	<button on:click={generateCanvas}> Click for space magic! </button>
 	<select
 		bind:value={selectedRegion}
 		on:change={() => onSelectionChange(selectedRegion)}
