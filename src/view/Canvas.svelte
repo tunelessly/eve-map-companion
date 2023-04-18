@@ -16,6 +16,7 @@
 
 	let selectedRegion = "-";
 	let regionNames = [];
+	let asSubway = false;
 	const store = writable({
 		cameraProperties: {},
 		points: new Points(
@@ -30,10 +31,10 @@
 	});
 
 	const init = () => {
-		const world = generateGalaxy();
-		const cameraProperties = world.cameraSettings;
-		const lines = world.lines;
-		const points = world.points;
+		const settings = generateGalaxy();
+		const cameraProperties = settings.cameraSettings;
+		const lines = settings.lines;
+		const points = settings.points;
 		regionNames = getRegionNames();
 		store.set({
 			cameraProperties,
@@ -45,8 +46,10 @@
 
 	init();
 
-	function onSelectionChange(selectedRegion: string) {
-		const settings = generateRegion(selectedRegion);
+	function changeToRegion(selectedRegion: string) {
+		if (selectedRegion == "-") return;
+		console.log(`Subway mode: ${asSubway}`);
+		const settings = generateRegion(selectedRegion, asSubway);
 		const cameraProperties: PerspectiveCameraProperties =
 			settings.cameraSettings;
 		const points: Points = settings.points;
@@ -61,9 +64,17 @@
 </script>
 
 <div>
+	<label>
+		<input
+			type="checkbox"
+			bind:checked={asSubway}
+			on:change={() => changeToRegion(selectedRegion)}
+		/>
+		View as subway?
+	</label>
 	<select
 		bind:value={selectedRegion}
-		on:change={() => onSelectionChange(selectedRegion)}
+		on:change={() => changeToRegion(selectedRegion)}
 	>
 		{#each $store.regionNames as name}
 			<option value={name}>{name}</option>

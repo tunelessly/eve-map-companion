@@ -26,8 +26,8 @@ export const generateGalaxy = (): WorldSettings => {
     return data2Geometry(pointPositions, pointColors, linePositions);
 }
 
-export const generateRegion = (regionName: string) => {
-    const { pointPositions, pointColors, linePositions } = getRegionGeometryData(regionName, true, false);
+export const generateRegion = (regionName: string, asSubway: boolean) => {
+    const { pointPositions, pointColors, linePositions } = getRegionGeometryData(regionName, true, asSubway);
     return data2Geometry(pointPositions, pointColors, linePositions);
 }
 

@@ -1,4 +1,4 @@
-import eveUniverse from './universe-pretty-1681772457983.json';
+import eveUniverse from './universe-pretty-1681826348662.json';
 import { Galaxy } from './galaxy';
 import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry, type coordinates3D } from '../utils/geometry';
 
@@ -28,8 +28,8 @@ export const getAllRegionNames = () => {
 export const getRegionGeometryData = (region: string, withLines: boolean = false, asSubway: boolean = false) => {
     const galaxy = Galaxy.instance;
     if (asSubway) galaxy.regionalSubway(region);
-    const linePositions = withLines ? linestoGeometry(galaxy.getConnections(region)) : [];
-    const data = galaxy.getRegionCoordinatesandStatuses(region);
+    const linePositions = withLines ? linestoGeometry(galaxy.getConnections(region, asSubway)) : [];
+    const data = galaxy.getRegionCoordinatesandStatuses(region, asSubway);
 
     const pointPositions = coordinates2Three(data.map(x => x[0]));
     const pointColors = security2Color(data.map(x => x[1]));
