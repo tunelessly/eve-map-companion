@@ -13,7 +13,7 @@ type HSV = {
 }
 
 export type coordinates3D = {
-    extra?: any
+    systemID?: any
     x: number,
     y: number,
     z: number

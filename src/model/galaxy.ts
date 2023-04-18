@@ -1,5 +1,5 @@
 import type { coordinates3D } from '../utils/geometry';
-import { forceSimulation, forceManyBody } from "d3-force";
+import { forceSimulation, forceLink, forceManyBody, forceCollide, forceRadial } from "d3-force";
 import { ok, err, Result } from "neverthrow";
 
 type RegionName = string;
@@ -226,8 +226,8 @@ export class Galaxy {
             .map(x => {
                 const source = x[0];
                 const target = x[1];
-                source.coordinates.extra = source.name;
-                target.coordinates.extra = target.name;
+                source.coordinates.systemID = source.id;
+                target.coordinates.systemID = target.id;
                 if (source.regionName == target.regionName) {
                     return [source.coordinates, target.coordinates];
                 }
@@ -277,36 +277,51 @@ export class Galaxy {
 
     private subway = (source: Result<Node[], any>): void => {
         source.map(nodes => {
-            const simulation = forceSimulation(nodes)
-                .force("charge", forceManyBody().strength(-1))
-                .stop();
-            simulation.tick(300);
+            Result.combine(nodes
+                .flatMap(node => {
+                    return this.getSystem(node.systemID);
+                }))
+                .map(systems => {
+                    return systems.flatMap(system => {
+                        return system.links.flatMap(link => {
+                            if (this._systems[link].regionName != this._systems[system.id].regionName) return undefined;
+                            return { source: system.id, target: link }
+                        }).filter(x => x !== undefined); // Oh my god
+                    });
+                }).map(links => {
+                    const simulation = forceSimulation(nodes)
+                        .force("link", forceLink().id((x: Node) => x.systemID).links(links).iterations(10).strength(1))
+                        .force("charge", forceManyBody())
+                        .force("collide", forceCollide().radius(15))
+                        .stop();
+                    simulation.tick(500);
 
-            nodes.map(coordinate => {
-                // remap the axes - we've lost the z axis and if we display this as is we'll get a disc
-                // viewed edge-on.
-                // Should this belong to this data structure?
-                // TODO
-                return { systemID: coordinate.systemID, x: coordinate.x, y: coordinate.z, z: coordinate.y }
-            })
-                .forEach(coordinate => {
-                    this
-                        .getSystem(coordinate.systemID)
-                        .map(system => {
-                            // copy every stat from the original system
-                            // except the coordinates
-                            const coordinates = { x: coordinate.x, y: coordinate.y, z: coordinate.z };
-                            const securityStatus = system.securityStatus;
-                            const regionName = system.regionName;
-                            const systemID = system.id;
-                            const systemName = system.name;
-                            const links = system.links;
-                            const remappedSystem = new System(coordinates, securityStatus, regionName, systemID, systemName);
-                            // console.log(`Remapped ${remappedSystem.name} Coordinates: ${coordinates.x} ${coordinates.y} ${coordinates.z}`);
-                            links.forEach(link => remappedSystem.addLink(link));
-                            this.addSubwaySystem(remappedSystem);
-                        })
-                        .mapErr(e => console.log(`Error trying to replace systems: ${e}`));
+                    nodes.map(coordinate => {
+                        // remap the axes - we've lost the z axis and if we display this as is we'll get a disc
+                        // viewed edge-on.
+                        // Should this belong to this data structure?
+                        // TODO
+                        return { systemID: coordinate.systemID, x: coordinate.x, y: coordinate.z, z: coordinate.y }
+                    })
+                        .forEach(coordinate => {
+                            this
+                                .getSystem(coordinate.systemID)
+                                .map(system => {
+                                    // copy every stat from the original system
+                                    // except the coordinates
+                                    const coordinates = { x: coordinate.x, y: coordinate.y, z: coordinate.z };
+                                    const securityStatus = system.securityStatus;
+                                    const regionName = system.regionName;
+                                    const systemID = system.id;
+                                    const systemName = system.name;
+                                    const links = system.links;
+                                    const remappedSystem = new System(coordinates, securityStatus, regionName, systemID, systemName);
+                                    // console.log(`Remapped ${remappedSystem.name} Coordinates: ${coordinates.x} ${coordinates.y} ${coordinates.z}`);
+                                    links.forEach(link => remappedSystem.addLink(link));
+                                    this.addSubwaySystem(remappedSystem);
+                                })
+                                .mapErr(e => console.log(`Error trying to replace systems: ${e}`));
+                        });
                 });
         });
     }
