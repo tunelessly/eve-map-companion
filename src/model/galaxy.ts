@@ -237,6 +237,21 @@ export class Galaxy {
             });
     }
 
+    public serializeSubway = () => {
+        const retVal: Record<RegionName, System[]> = {}
+        const systems: System[] = Object.keys(this._subwaySystems)
+            .flatMap(k => {
+                return this._subwaySystems[k]
+            });
+
+        systems.forEach(system => {
+            if (!(system.regionName in retVal)) retVal[system.regionName] = [];
+            retVal[system.regionName].push(system);
+        });
+
+        return retVal;
+    }
+
     public getConnections = (regionName: RegionName, asSubway: boolean = false): [coordinates3D, coordinates3D][] => {
         console.log(`Getting connections as subway? ${asSubway}`);
         return this.getRegion(regionName, asSubway)

@@ -1,5 +1,6 @@
 import { Galaxy } from "./model/galaxy.js";
 import eveUniverse from './model/universe-pretty-1681826348662.json' assert {type: "json" };
+import fs from "fs";
 
 const main = () => {
     if (!(typeof process !== "undefined" &&
@@ -15,6 +16,13 @@ const main = () => {
         console.log(`Subwayifying ${regionName}`);
         galaxy.regionalSubway(regionName);
     });
+
+    const regionSubways = galaxy.serializeSubway();
+
+    fs.writeFileSync(
+        `./src/model/region-subway-pretty-${Date.now()}.json`,
+        JSON.stringify(regionSubways, null, 2),
+    );
 
 }
 
