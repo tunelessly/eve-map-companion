@@ -1,5 +1,5 @@
 import type { coordinates3D } from '../utils/geometry';
-import { forceSimulation, forceLink, forceManyBody, forceCollide, forceRadial } from "d3-force";
+import { forceSimulation, forceLink, forceManyBody, forceCollide } from "d3-force";
 import { ok, err, Result } from "neverthrow";
 
 type RegionName = string;
