@@ -7,7 +7,7 @@ const main = () => {
         process.versions != null &&
         process.versions.node != null)) {
         console.error("This file ended up running in the browser by mistake!");
-        return;
+        return -1;
     }
 
     const galaxy = Galaxy.instance;
@@ -23,7 +23,7 @@ const main = () => {
         `./src/model/region-subway-pretty-${Date.now()}.json`,
         JSON.stringify(regionSubways, null, 2),
     );
-
+    return 0;
 }
 
 main();
