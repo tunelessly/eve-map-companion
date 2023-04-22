@@ -27,19 +27,30 @@ type Jumps = {
     to: number
 }
 
-export type EvEUniverse = {
+type EvEUniverse = {
     regions: Record<string, string>
     solarSystems: SolarSystem[]
     jumps: Jumps[]
 }
 
-class System {
+type EvESubway = Record<RegionName, SystemLike[]>;
+
+interface SystemLike {
+    coordinates: coordinates3D;
+    securityStatus: number;
+    name: string;
+    id: SystemID;
+    regionName: RegionName;
+    _links: number[];
+}
+
+class System implements SystemLike {
     public readonly coordinates: coordinates3D;
     public readonly securityStatus: number;
     public readonly name: string;
     public readonly id: SystemID;
     public readonly regionName: RegionName;
-    private readonly _links: number[] = [];
+    public readonly _links: number[] = [];
 
     constructor(coordinates, securityStatus, regionName, id, name) {
         this.coordinates = coordinates;
@@ -99,73 +110,8 @@ export class Galaxy {
         return this._instance || (this._instance = new this());
     }
 
-    private addRegion(region: Region): void {
-        this._regions[region.name] = region;
-        this._subwayRegions[region.name] = region;
-        this._regionName2Systems[region.name] = [];
-        this._subwayRegionName2Systems[region.name] = [];
-    }
-
-    private addSystem(system: System): void {
-        this._systems[system.id] = system;
-        this.getRegion(system.regionName).map(r => {
-            // Presumes regions come before systems
-            // TODO
-            this._regionName2Systems[r.name].push(system);
-            this._systemID2Region[system.id] = r;
-        }).mapErr(e => console.log(`Error while adding a system to a region and/or vice versa: ${e}`));
-    }
-
-    private addSubwaySystem(system: System): void {
-        console.log(`Adding subway system: ${system.name}, ${system.id}`);
-        this._subwaySystems[system.id] = system;
-        this.getRegion(system.regionName).map(r => {
-            // Presumes regions come before systems
-            // TODO
-            this._subwayRegionName2Systems[r.name].push(system);
-            this._subwaySystemID2Region[system.id] = r;
-        }).mapErr(e => console.log(`Error while adding a subway system to a region and/or vice versa: ${e}`));
-    }
-
     public getAllRegionNames = (): string[] => {
         return Object.keys(this._regions).sort();
-    }
-
-    private getRegion(regionID: string, asSubway: boolean = false): Result<Region, string> {
-        const region = asSubway ? this._subwayRegions[regionID] : this._regions[regionID];
-        if (region === undefined) {
-            return err(`Region not found: ${regionID} Subway mode: ${asSubway}`);
-        }
-        else {
-            return ok(region);
-        }
-    }
-
-    private getSystem(systemID: SystemID, asSubway: boolean = false): Result<System, string> {
-        const maybeSystem1 = asSubway ? this._subwaySystems[systemID] : this._systems[systemID];
-        const maybeSystem2 = !asSubway ? this._subwaySystems[systemID] : this._systems[systemID];
-        let errorMessage = "";
-
-        if (maybeSystem1 === undefined) {
-            errorMessage = `Subway mode: ${asSubway} - Failed to find system ${systemID}. `;
-            if (maybeSystem2 === undefined) {
-                errorMessage += `Failed to find it on the other dictionary too.`;
-            }
-            else {
-                return ok(maybeSystem2);
-            }
-            return err(errorMessage);
-        }
-        else {
-            return ok(maybeSystem1);
-        }
-    }
-
-    private getSystemsFromRegion(regionName: RegionName, asSubway = false): Result<System[], string> {
-        const source = asSubway ? this._subwayRegionName2Systems : this._regionName2Systems;
-        return this.getRegion(regionName, asSubway).map(region => {
-            return source[region.name];
-        });
     }
 
     public get name() {
@@ -202,11 +148,107 @@ export class Galaxy {
         this._wasInitialized = true;
     }
 
+    public populateGalaxySubway(sourceData: EvESubway) {
+
+        Object.keys(sourceData)
+            .forEach(region => {
+                console.log(`Creating subway for region: ${region}`);
+                const region2System = this._subwayRegionName2Systems;
+                const system2Region = this._subwaySystemID2Region;
+                const subwaySystems = this._subwaySystems;
+                const subwayRegions = this._subwayRegions;
+
+                subwayRegions[region] = this._regions[region];
+                const result = sourceData[region].map(systemLike => {
+                    const system = new System(
+                        systemLike.coordinates,
+                        systemLike.securityStatus,
+                        systemLike.regionName,
+                        systemLike.id,
+                        systemLike.name,
+                    );
+                    systemLike._links.forEach(link => {
+                        system.addLink(link);
+                    });
+                    system2Region[system.id] = this._regions[system.regionName];
+                    subwaySystems[system.id] = system;
+                    return system;
+                });
+                console.log(`\t Added ${result.length} systems.`);
+                region2System[region] = result;
+            });
+    }
+
+    private addRegion(region: Region): void {
+        this._regions[region.name] = region;
+        this._subwayRegions[region.name] = region;
+        this._regionName2Systems[region.name] = [];
+        this._subwayRegionName2Systems[region.name] = [];
+    }
+
+    private addSystem(system: System): void {
+        this._systems[system.id] = system;
+        this.getRegion(system.regionName).map(r => {
+            // Presumes regions come before systems
+            // TODO
+            this._regionName2Systems[r.name].push(system);
+            this._systemID2Region[system.id] = r;
+        }).mapErr(e => console.log(`Error while adding a system to a region and/or vice versa: ${e}`));
+    }
+
+    private addSubwaySystem(system: System): void {
+        console.log(`Adding subway system: ${system.name}, ${system.id}`);
+        this._subwaySystems[system.id] = system;
+        this.getRegion(system.regionName).map(region => {
+            // Presumes regions come before systems
+            // TODO
+            this._subwayRegionName2Systems[region.name].push(system);
+            this._subwaySystemID2Region[system.id] = region;
+        }).mapErr(e => console.log(`Error while adding a subway system to a region and/or vice versa: ${e}`));
+    }
+
+    private getRegion(regionID: string, asSubway: boolean = false): Result<Region, string> {
+        const region = asSubway ? this._subwayRegions[regionID] : this._regions[regionID];
+        if (region === undefined) {
+            return err(`Region not found: ${regionID} Subway mode: ${asSubway}`);
+        }
+        else {
+            return ok(region);
+        }
+    }
+
+    private getSystem(systemID: SystemID, asSubway: boolean = false): Result<System, string> {
+        const maybeSystem1 = asSubway ? this._subwaySystems[systemID] : this._systems[systemID];
+        const maybeSystem2 = !asSubway ? this._subwaySystems[systemID] : this._systems[systemID];
+        let errorMessage = "";
+
+        if (maybeSystem1 === undefined) {
+            errorMessage = `Subway mode: ${asSubway} - Failed to find system ${systemID}. `;
+            if (maybeSystem2 === undefined) {
+                errorMessage += `Failed to find it on the other dictionary too.`;
+            }
+            else {
+                return ok(maybeSystem2);
+            }
+            return err(errorMessage);
+        }
+        else {
+            return ok(maybeSystem1);
+        }
+    }
+
     private produceSystemsThings<T>(regionName: RegionName, thing: (arg: System) => T, asSubway: boolean = false): T[] {
         return this.getSystemsFromRegion(regionName, asSubway)
             .map(systems => systems.map(thing))
             .mapErr(e => `Error retreiving a region's systems: ${e} `)
             .unwrapOr([]);
+    }
+
+    private getSystemsFromRegion(regionName: RegionName, asSubway = false): Result<System[], string> {
+        const source = asSubway ? this._subwayRegionName2Systems : this._regionName2Systems;
+        return this.getRegion(regionName, asSubway).map(region => {
+            return source[region.name];
+        });
     }
 
     public getRegionCoordinatesandStatuses = (regionName: string, asSubway: boolean = false): [coordinates3D, number][] => {
@@ -284,7 +326,7 @@ export class Galaxy {
             return this.getSystemsFromRegion(region.name)
                 .map((systems: System[]): Node[] => {
                     return systems.map((system: System): Node => { return { systemID: system.id, x: system.coordinates.x, y: system.coordinates.y, z: 0 } });
-                })
+                });
         })
             .andThen(x => x);
         this.subway(result);
