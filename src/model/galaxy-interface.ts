@@ -1,5 +1,5 @@
 import eveUniverse from './universe-pretty-1681826348662.json';
-import { Galaxy } from './galaxy';
+import { Galaxy } from './galaxy.js';
 import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry, type coordinates3D } from '../utils/geometry';
 
 const initGalaxy = () => {

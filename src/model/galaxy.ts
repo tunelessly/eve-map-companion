@@ -1,4 +1,4 @@
-import type { coordinates3D } from '../utils/geometry';
+import type { coordinates3D } from '../utils/geometry.js';
 import { forceSimulation, forceLink, forceManyBody, forceCollide } from "d3-force";
 import { ok, err, Result } from "neverthrow";
 

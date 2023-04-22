@@ -1,0 +1,21 @@
+import { Galaxy } from "./model/galaxy.js";
+import eveUniverse from './model/universe-pretty-1681826348662.json' assert {type: "json" };
+
+const main = () => {
+    if (!(typeof process !== "undefined" &&
+        process.versions != null &&
+        process.versions.node != null)) {
+        console.error("This file ended up running in the browser by mistake!");
+        return;
+    }
+
+    const galaxy = Galaxy.instance;
+    galaxy.populateGalaxy(eveUniverse);
+    galaxy.getAllRegionNames().forEach(regionName => {
+        console.log(`Subwayifying ${regionName}`);
+        galaxy.regionalSubway(regionName);
+    });
+
+}
+
+main();
