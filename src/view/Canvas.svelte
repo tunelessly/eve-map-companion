@@ -11,7 +11,7 @@
 		getRegionNames,
 		generateGalaxy,
 		generateRegion,
-	} from "../controller/controller.js";
+	} from "../controller/controller";
 	import { writable } from "svelte/store";
 
 	let selectedRegion = "-";
