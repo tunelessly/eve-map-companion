@@ -1,5 +1,5 @@
-import eveUniverse from './universe-pretty-1681826348662.json';
-import eveSubway from './region-subway-pretty-1682182646595.json';
+import eveUniverse from './universe-pretty-1682199656932.json';
+import eveSubway from './region-subway-pretty-1682211913146.json';
 import { Galaxy } from './galaxy.js';
 import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry, type coordinates3D } from '../utils/geometry';
 

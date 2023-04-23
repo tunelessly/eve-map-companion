@@ -1,5 +1,5 @@
 import { Galaxy } from "./model/galaxy.js";
-import eveUniverse from './model/universe-pretty-1681826348662.json' assert {type: "json" };
+import eveUniverse from './model/universe-pretty-1682199656932.json' assert {type: "json" };
 import fs from "fs";
 
 const main = () => {

@@ -1,5 +1,6 @@
 import type { coordinates3D } from '../utils/geometry.js';
 import { forceSimulation, forceLink, forceManyBody, forceCollide } from "d3-force";
+import { regionPreProcess } from './galaxy-subway-preprocessor.js';
 import { ok, err, Result } from "neverthrow";
 
 type RegionName = string;
@@ -33,9 +34,9 @@ type EvEUniverse = {
     jumps: Jumps[]
 }
 
-type EvESubway = Record<RegionName, SystemLike[]>;
+export type EvESubway = Record<RegionName, SystemLike[]>;
 
-interface SystemLike {
+export interface SystemLike {
     coordinates: coordinates3D;
     securityStatus: number;
     name: string;
@@ -149,8 +150,9 @@ export class Galaxy {
     }
 
     public populateGalaxySubway(sourceData: EvESubway) {
+        const processedData = regionPreProcess(sourceData);
 
-        Object.keys(sourceData)
+        Object.keys(processedData)
             .forEach(region => {
                 console.log(`Creating subway for region: ${region}`);
                 const region2System = this._subwayRegionName2Systems;
