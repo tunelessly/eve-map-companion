@@ -1,7 +1,7 @@
-import { getGalaxyGeometryData, getRegionGeometryData, getAllRegionNames } from "../model/galaxy-interface";
-import { pointGeometryFromData, materialFromData } from "./points";
-import { lineGeometryFromData } from "./lines";
-import { getCameraProperties } from "./camera";
+import { getGalaxyGeometryData, getRegionGeometryData, getAllRegionNames } from "../model/galaxy-interface.js";
+import { pointGeometryFromData, materialFromData } from "./points.js";
+import { lineGeometryFromData } from "./lines.js";
+import { getCameraProperties } from "./camera.js";
 import { Points, type LineSegments } from "three";
 import { Vector3 } from "three";
 import type { PerspectiveCameraProperties } from "@threlte/core";

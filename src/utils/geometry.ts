@@ -68,7 +68,7 @@ export const RGBtofloat = (rgb: RGB): normalizedRGB => {
 export const coordinatestoGeometry = (coordinates: coordinates3D[]): number[] => {
     let retVal: number[] = [];
     for (let coords of coordinates) {
-        retVal.push(coords.x, coords.y, coords.z);
+        retVal.push(coords.x, coords.z, coords.y);
     }
     return retVal;
 }
@@ -80,8 +80,8 @@ export const linestoGeometry = (coordinates: [coordinates3D, coordinates3D][]): 
         let originSystem = coords[0];
         let targetSystem = coords[1];
         if (originSystem === undefined && targetSystem === undefined) continue; // TODO
-        retVal.push([originSystem.x, originSystem.y, originSystem.z]);
-        retVal.push([targetSystem.x, targetSystem.y, targetSystem.z]);
+        retVal.push([originSystem.x, originSystem.z, originSystem.y]);
+        retVal.push([targetSystem.x, targetSystem.z, targetSystem.y]);
     }
     return retVal;
 }

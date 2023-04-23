@@ -1,10 +1,12 @@
-import eveUniverse from './universe-pretty-1681826348662.json';
-import { Galaxy } from './galaxy';
+import eveUniverse from './universe-pretty-1682199656932.json';
+import eveSubway from './region-subway-pretty-1682211913146.json';
+import { Galaxy } from './galaxy.js';
 import { HSV2RGB, RGBtofloat, sectoHSV, coordinatestoGeometry, linestoGeometry, type coordinates3D } from '../utils/geometry';
 
 const initGalaxy = () => {
     let start = Date.now();
     Galaxy.instance.populateGalaxy(eveUniverse);
+    Galaxy.instance.populateGalaxySubway(eveSubway);
     console.log(`Galaxy creation took: ${Date.now() - start}ms`);
 }
 initGalaxy();
@@ -27,8 +29,8 @@ export const getAllRegionNames = () => {
 
 export const getRegionGeometryData = (region: string, withLines: boolean = false, asSubway: boolean = false) => {
     const galaxy = Galaxy.instance;
-    if (asSubway) galaxy.regionalSubway(region);
     const linePositions = withLines ? linestoGeometry(galaxy.getConnections(region, asSubway)) : [];
+    console.dir(linePositions);
     const data = galaxy.getRegionCoordinatesandStatuses(region, asSubway);
 
     const pointPositions = coordinates2Three(data.map(x => x[0]));
@@ -40,7 +42,6 @@ export const getRegionGeometryData = (region: string, withLines: boolean = false
 export const getGalaxyGeometryData = (asSubway: boolean = false) => {
     const galaxy = Galaxy.instance;
     const linePositions = []
-    if (asSubway) galaxy.galacticSubway();
     const data = galaxy.getGalaxyCoordinatesandStatuses()
 
     const pointPositions = coordinates2Three(data.map(x => x[0]));
