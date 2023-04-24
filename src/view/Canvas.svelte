@@ -71,17 +71,9 @@
 	};
 
 	const restartRender = (settings: WorldSettings): void => {
-		if (renderer !== undefined) {
-			renderer.dispose();
-		}
-		if (scene !== undefined) {
-			scene.clear();
-		}
-		if (camera !== undefined) {
-			camera.clear();
-		}
 		if (worldSettings !== undefined) {
 			worldSettings.lines.geometry.dispose();
+			worldSettings.lines.clear();
 			if (worldSettings.lines.material instanceof Material) {
 				worldSettings.lines.material.dispose();
 			} else {
@@ -90,6 +82,7 @@
 				}
 			}
 			worldSettings.points.geometry.dispose();
+			worldSettings.points.clear();
 			if (worldSettings.points.material instanceof Material) {
 				worldSettings.points.material.dispose();
 			} else {
@@ -98,6 +91,10 @@
 				}
 			}
 		}
+		if (cameraControls !== undefined) cameraControls.dispose();
+		if (camera !== undefined) camera.clear();
+		if (scene !== undefined) scene.clear();
+		if (renderer !== undefined) renderer.dispose();
 
 		({ renderer, scene, camera, cameraControls } = setupScene(settings));
 		animate();

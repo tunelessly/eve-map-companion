@@ -30,7 +30,6 @@ export const getAllRegionNames = () => {
 export const getRegionGeometryData = (region: string, withLines: boolean = false, asSubway: boolean = false) => {
     const galaxy = Galaxy.instance;
     const linePositions = withLines ? linestoGeometry(galaxy.getConnections(region, asSubway)) : [];
-    console.dir(linePositions);
     const data = galaxy.getRegionCoordinatesandStatuses(region, asSubway);
 
     const pointPositions = coordinates2Three(data.map(x => x[0]));
@@ -39,7 +38,7 @@ export const getRegionGeometryData = (region: string, withLines: boolean = false
     return { pointPositions, pointColors, linePositions }
 }
 
-export const getGalaxyGeometryData = (asSubway: boolean = false) => {
+export const getGalaxyGeometryData = () => {
     const galaxy = Galaxy.instance;
     const linePositions = []
     const data = galaxy.getGalaxyCoordinatesandStatuses()

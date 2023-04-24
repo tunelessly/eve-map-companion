@@ -4,12 +4,11 @@ import { lineGeometryFromData } from "./lines.js";
 import { getCameraProperties } from "./camera.js";
 import { Points, type LineSegments } from "three";
 import { Vector3 } from "three";
-import type { PerspectiveCameraProperties } from "@threlte/core";
 
 export type WorldSettings = {
     points: Points
     lines: LineSegments
-    cameraSettings: PerspectiveCameraProperties
+    cameraSettings: ReturnType<typeof getCameraProperties>
 }
 
 const magnitude = (x: number): number => {
