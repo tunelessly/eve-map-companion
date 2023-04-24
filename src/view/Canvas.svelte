@@ -1,13 +1,5 @@
 <script lang="ts">
-	import type { PerspectiveCameraProperties } from "@threlte/core";
-	import {
-		Scene,
-		Points,
-		LineSegments,
-		BufferGeometry,
-		PerspectiveCamera,
-		WebGLRenderer,
-	} from "three";
+	import { Scene, PerspectiveCamera, WebGLRenderer, Color } from "three";
 	import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 	import {
 		getRegionNames,
@@ -15,54 +7,7 @@
 		generateRegion,
 		type WorldSettings,
 	} from "../controller/controller.js";
-	import { writable } from "svelte/store";
 	import { onMount } from "svelte";
-
-	// let selectedRegion = "-";
-	// let regionNames = [];
-	// let asSubway = false;
-	// const store = writable({
-	// 	cameraProperties: {},
-	// 	points: new Points(
-	// 		(() => {
-	// 			const a = new BufferGeometry();
-	// 			a.computeBoundingSphere();
-	// 			return a;
-	// 		})()
-	// 	),
-	// 	lines: new LineSegments(new BufferGeometry()),
-	// 	regionNames: regionNames,
-	// });
-
-	// const init = () => {
-	// 	const settings = generateGalaxy();
-	// 	const cameraProperties = settings.cameraSettings;
-	// 	const lines = settings.lines;
-	// 	const points = settings.points;
-	// 	regionNames = getRegionNames();
-	// 	store.set({
-	// 		cameraProperties,
-	// 		points,
-	// 		lines,
-	// 		regionNames,
-	// 	});
-
-	// 	scene = new Scene();
-	// 	scene.add(points);
-	// 	scene.add(lines);
-	// 	camera = new PerspectiveCamera(
-	// 		cameraProperties.fov,
-	// 		window.innerWidth / window.innerHeight,
-	// 		cameraProperties.near,
-	// 		cameraProperties.far
-	// 	);
-	// 	camera.lookAt(points.geometry.boundingSphere.center);
-	// 	renderer = new WebGLRenderer();
-	// 	renderer.setSize(window.innerWidth, window.innerHeight);
-	// 	document.body.appendChild(renderer.domElement);
-	// };
-
-	// init();
 
 	let scene: Scene;
 	let camera: PerspectiveCamera;
@@ -83,7 +28,7 @@
 		const width = rect.width;
 		const height = rect.height;
 
-		const renderer = new WebGLRenderer();
+		const renderer = new WebGLRenderer({ alpha: true });
 		const scene = new Scene();
 		const camera = new PerspectiveCamera(
 			cameraProperties.fov,
