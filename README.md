@@ -1,47 +1,26 @@
-# Svelte + TS + Vite
+# Index
+1. [Overview](#overview)
+1. [How to use](#how-to-use)
+    1. [As a user](#as-a-user)
+        1. [Primer](#primer)
+    1. [As a developer](#as-a-developer)
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+# Overview
+`EvE map companion` is an alternate map visualisation for the [EvE Online](https://www.eveonline.com/) video game, that runs solely in the browser.
 
-## Recommended IDE Setup
+# How to use
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+## As a user
+[Click here](https://tunelessly.github.io/eve-map-companion/) for the latest version. That's it!
 
-## Need an official Svelte framework?
+## As a developer
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+### Primer
+This app requires data which you can get from [eve-map-json](https://github.com/mickdekkers/eve-map-json). `eve-map-json` will read data off a database and produce a JSON representation of the geometry of the entire EvE universe. This output is [commited to this repository](./src/model/universe-pretty-1682199656932.json) and sent to the client when they load the app. I've altered `eve-map-json` locally somewhat to omit certain regions or include extra information; I advise readers to peruse that project for extra context.  
 
-## Technical considerations
+One of the goals I set out to achieve was to provide a much more readable representation of the EvE map that would be the sort-of equivalent of a subway map. The solution I used is not optimal - graph untangling is an ongoing research concern - but it produced good enough results. Computing this on the client was unkind to mobile devices so the output of the subway process is also [commited to this repository](./src/model/region-subway-pretty-1682211913146.json) and sent to the client. 
 
-**Why use this over SvelteKit?**
+### How to use
+The app has two entry points: one for web, one local. The web entry point is what users interact with in the browser, and what's actually distributed on build.
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
-
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
-```
+The local entry point is used to create the subway representation from the original data.
