@@ -106,6 +106,17 @@
 	};
 
 	onMount(() => {
+		window.addEventListener("resize", () => {
+			const rect = rootHTMLElement.getBoundingClientRect();
+			const width = rect.width;
+			const height = rect.height;
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(width, height);
+			renderer.render(scene, camera);
+		});
+
 		regionNames = getRegionNames();
 		restartRender(generateGalaxy());
 	});
