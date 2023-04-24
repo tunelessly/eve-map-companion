@@ -128,7 +128,7 @@ export const regionPreProcess = (data: EvESubway): EvESubway => {
     offendingRegions.forEach(regionName => {
         const systemsOfInterest = offendingRegions[regionName];
         const systems = data[regionName];
-        console.log(`Preprocessing region ${regionName}: ${systemsOfInterest}`);
+        console.log(`Preprocessing region ${regionName}`);
 
         systems.forEach((system: SystemLike) => {
             if (system.name in systemRemapCoordinates) {
