@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Scene, PerspectiveCamera, WebGLRenderer, Color } from "three";
+	import { Scene, PerspectiveCamera, WebGLRenderer, Material } from "three";
 	import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 	import {
 		getRegionNames,
@@ -7,6 +7,7 @@
 		generateRegion,
 		type WorldSettings,
 	} from "../controller/controller.js";
+	import { Text } from "troika-three-text";
 	import { onMount } from "svelte";
 
 	let scene: Scene;
@@ -15,11 +16,13 @@
 	let renderer: WebGLRenderer;
 	let rootHTMLElement: HTMLElement;
 
+	let worldSettings: WorldSettings;
 	let selectedRegion = "-";
 	let regionNames = [];
 	let asSubway = false;
 
 	const setupScene = (settings: WorldSettings) => {
+		worldSettings = settings;
 		const cameraProperties = settings.cameraSettings;
 		const lines = settings.lines;
 		const points = settings.points;
@@ -68,6 +71,34 @@
 	};
 
 	const restartRender = (settings: WorldSettings): void => {
+		if (renderer !== undefined) {
+			renderer.dispose();
+		}
+		if (scene !== undefined) {
+			scene.clear();
+		}
+		if (camera !== undefined) {
+			camera.clear();
+		}
+		if (worldSettings !== undefined) {
+			worldSettings.lines.geometry.dispose();
+			if (worldSettings.lines.material instanceof Material) {
+				worldSettings.lines.material.dispose();
+			} else {
+				for (let material of worldSettings.lines.material) {
+					material.dispose();
+				}
+			}
+			worldSettings.points.geometry.dispose();
+			if (worldSettings.points.material instanceof Material) {
+				worldSettings.points.material.dispose();
+			} else {
+				for (let material of worldSettings.points.material) {
+					material.dispose();
+				}
+			}
+		}
+
 		({ renderer, scene, camera, cameraControls } = setupScene(settings));
 		animate();
 	};
