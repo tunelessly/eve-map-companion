@@ -3,6 +3,7 @@
 1. [How to use](#how-to-use)
     1. [As a user](#as-a-user)
         1. [Primer](#primer)
+        1. [How to use](#how-to-use-1)
     1. [As a developer](#as-a-developer)
 
 # Overview
