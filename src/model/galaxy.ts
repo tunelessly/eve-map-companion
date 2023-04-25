@@ -1,4 +1,3 @@
-import type { coordinates3D } from '../utils/geometry.js';
 import { forceSimulation, forceLink, forceManyBody, forceCollide } from "d3-force";
 import { regionPreProcess } from './galaxy-subway-preprocessor.js';
 import { ok, err, Result } from "neverthrow";
@@ -35,6 +34,12 @@ type EvEUniverse = {
 }
 
 export type EvESubway = Record<RegionName, SystemLike[]>;
+export type coordinates3D = {
+    systemID?: number;
+    x: number;
+    y: number;
+    z: number;
+}
 
 export interface SystemLike {
     coordinates: coordinates3D;

@@ -1,6 +1,4 @@
-import type { EvESubway, SystemLike } from './galaxy.js';
-import type { coordinates3D } from '../utils/geometry.js';
-
+import type { EvESubway, SystemLike, coordinates3D } from './galaxy.js';
 
 const displacer = (displacement: coordinates3D) => (coordinates: coordinates3D): coordinates3D => {
     return {
