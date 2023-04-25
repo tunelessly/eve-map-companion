@@ -18,7 +18,6 @@
   };
 
   onMount(() => {
-    window.addEventListener("resize", () => {});
     Galaxy.instance.populateGalaxy(eveUniverse);
     Galaxy.instance.populateGalaxySubway(eveSubway);
     const model = Galaxy.instance;
@@ -26,6 +25,7 @@
     controller = new Controller(model, view);
     controller.displayGalaxy();
     regionNames = controller.getRegionNames();
+    window.addEventListener("resize", () => view.onWindowResize());
   });
 </script>
 

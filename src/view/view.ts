@@ -1,4 +1,4 @@
-import { WebGLRenderer, Scene, Camera, PerspectiveCamera, LineSegments, Material } from "three";
+import { WebGLRenderer, Scene, PerspectiveCamera, LineSegments, Material } from "three";
 import { Points, Vector3, Matrix4 } from "three";
 import type { coordinates3D } from "../model/galaxy";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -31,16 +31,19 @@ export interface ViewLike {
 export class webGLView implements ViewLike {
     private _renderer: WebGLRenderer;
     private _scene: Scene;
-    private _camera: Camera;
+    private _camera: PerspectiveCamera;
     private _cameraControls: OrbitControls;
     private _scalingFactor: number;
     private _displacement: Vector3;
     private _points: Points;
     private _lines: LineSegments;
     private readonly _rootHTMLElement: HTMLElement;
+    private readonly _creationDate: number;
 
     constructor(rootHTMLElement: HTMLElement) {
         this._rootHTMLElement = rootHTMLElement;
+        this._creationDate = Date.now();
+        console.log(`Created at: ${this._creationDate}`);
     }
 
     get renderer() { return this._renderer };
@@ -52,6 +55,16 @@ export class webGLView implements ViewLike {
     get scalingFactor() { return this._scalingFactor; }
     get displacement() { return this._displacement; }
     get rootHTMLElement() { return this._rootHTMLElement; }
+
+    public onWindowResize() {
+        const rect = this.rootHTMLElement.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height);
+    }
 
     public dispose() {
         if (this.lines) {
