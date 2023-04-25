@@ -2,6 +2,7 @@
   console.log = import.meta.env.DEV ? console.log : () => {};
   import { Controller } from "./controller/controller";
   import { webGLView } from "./view/webGL/webGL";
+  import { CSS3DView } from "./view/css3D/css3D";
   import { Galaxy } from "./model/galaxy";
   import { onMount } from "svelte";
   import eveUniverse from "./model/universe-pretty-1682199656932.json";
@@ -21,7 +22,8 @@
     Galaxy.instance.populateGalaxy(eveUniverse);
     Galaxy.instance.populateGalaxySubway(eveSubway);
     const model = Galaxy.instance;
-    const view = new webGLView(rootHTMLElement);
+    // const view = new webGLView(rootHTMLElement);
+    const view = new CSS3DView(rootHTMLElement);
     controller = new Controller(model, view);
     controller.displayGalaxy();
     regionNames = controller.getRegionNames();

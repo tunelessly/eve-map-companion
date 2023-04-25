@@ -135,7 +135,7 @@ export class webGLView implements ViewLike {
 
         renderer.setSize(width, height);
         const previousRenderer =
-            this.rootHTMLElement.getElementsByTagName("canvas")[0];
+            this.rootHTMLElement.getElementsByTagName(renderer.domElement.tagName)[0];
         if (previousRenderer === undefined) {
             this.rootHTMLElement.appendChild(renderer.domElement);
         } else {
