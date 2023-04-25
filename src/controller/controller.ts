@@ -1,4 +1,4 @@
-import type { ViewLike } from "../view/view";
+import type { ViewLike } from "../view/viewlike";
 import type { Galaxy } from "../model/galaxy";
 
 export class Controller {

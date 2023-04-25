@@ -1,7 +1,7 @@
 <script lang="ts">
   console.log = import.meta.env.DEV ? console.log : () => {};
   import { Controller } from "./controller/controller";
-  import { webGLView } from "./view/view";
+  import { webGLView } from "./view/webGL/webGL";
   import { Galaxy } from "./model/galaxy";
   import { onMount } from "svelte";
   import eveUniverse from "./model/universe-pretty-1682199656932.json";

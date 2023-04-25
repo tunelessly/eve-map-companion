@@ -1,10 +1,11 @@
 import { WebGLRenderer, Scene, PerspectiveCamera, LineSegments, Material } from "three";
 import { Points, Vector3, Matrix4 } from "three";
-import type { coordinates3D } from "../model/galaxy";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { pointGeometryFromData, materialFromData } from "./points.js";
 import { lineGeometryFromData } from "./lines.js";
 import { getCameraProperties } from "./camera.js";
+import type { coordinates3D } from "../../model/galaxy.js";
+import type { ViewLike } from "../viewlike.js";
 
 type normalizedRGB = RGB;
 
@@ -18,14 +19,6 @@ type HSV = {
     h: number,
     s: number,
     v: number
-}
-
-export interface ViewLike {
-    update(
-        systemData: [string, coordinates3D, number][],
-        connections: [coordinates3D, coordinates3D][],
-    ): void;
-    dispose(): void;
 }
 
 export class webGLView implements ViewLike {
