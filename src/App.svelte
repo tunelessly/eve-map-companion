@@ -1,5 +1,5 @@
 <script lang="ts">
-  import App from "./view/Canvas2.svelte";
+  import App from "./view/Canvas.svelte";
   console.log = import.meta.env.DEV ? console.log : () => {};
 </script>
 

@@ -2,9 +2,9 @@ import { WebGLRenderer, Scene, Camera, PerspectiveCamera, LineSegments, Material
 import { Points, Vector3, Matrix4 } from "three";
 import type { coordinates3D } from "../utils/geometry";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { pointGeometryFromData, materialFromData } from "../controller/points.js";
-import { lineGeometryFromData } from "../controller/lines.js";
-import { getCameraProperties } from "../controller/camera.js";
+import { pointGeometryFromData, materialFromData } from "./points.js";
+import { lineGeometryFromData } from "./lines.js";
+import { getCameraProperties } from "./camera.js";
 
 type normalizedRGB = RGB;
 
