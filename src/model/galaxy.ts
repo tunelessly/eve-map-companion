@@ -90,7 +90,7 @@ class Region {
 
 export class Galaxy {
     private static _instance: Galaxy;
-    private readonly _name: String = "New Eden";
+    private readonly _name: string = "New Eden";
     private readonly _regions: Record<RegionName, Region> = {};
     private readonly _subwayRegions: Record<RegionName, Region> = {};
     private readonly _systems: Record<SystemID, System> = {};
@@ -219,7 +219,7 @@ export class Galaxy {
         }
     }
 
-    private getSystem(systemID: SystemID, asSubway: boolean = false): Result<System, string> {
+    public getSystem(systemID: SystemID, asSubway: boolean = false): Result<System, string> {
         const maybeSystem1 = asSubway ? this._subwaySystems[systemID] : this._systems[systemID];
         const maybeSystem2 = !asSubway ? this._subwaySystems[systemID] : this._systems[systemID];
         let errorMessage = "";
@@ -253,13 +253,14 @@ export class Galaxy {
         });
     }
 
-    public getRegionCoordinatesandStatuses = (regionName: string, asSubway: boolean = false): [coordinates3D, number][] => {
-        return this.produceSystemsThings(regionName, system => { return [system.coordinates, system.securityStatus] }, asSubway);
+    public getRegionCoordinatesandStatuses = (regionName: string, asSubway: boolean = false): [string, coordinates3D, number][] => {
+        return this.produceSystemsThings(regionName, system => { return [system.name, system.coordinates, system.securityStatus] }, asSubway);
     }
 
-    public getGalaxyCoordinatesandStatuses = (): [coordinates3D, number][] => {
+    public getGalaxyCoordinatesandStatuses = (): [string, coordinates3D, number][] => {
         // This is safe unless Object.keys is broken
         // so let's cut the crap
+        // return Object.keys(this._regions).flatMap(regionName => this.getRegionCoordinatesandStatuses(regionName)).map(x => [x[1], x[2]]);
         return Object.keys(this._regions).flatMap(regionName => this.getRegionCoordinatesandStatuses(regionName));
     }
 

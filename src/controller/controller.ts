@@ -1,14 +1,35 @@
-import { getGalaxyGeometryData, getRegionGeometryData, getAllRegionNames } from "../model/galaxy-interface.js";
+import { getGalaxyGeometryData, getRegionGeometryData, getAllRegionNames, getSystemCoordinates } from "../model/galaxy-interface.js";
 import { pointGeometryFromData, materialFromData } from "./points.js";
 import { lineGeometryFromData } from "./lines.js";
 import { getCameraProperties } from "./camera.js";
 import { Points, type LineSegments } from "three";
-import { Vector3 } from "three";
+import { Vector3, Matrix4 } from "three";
+
+export class TransformationSettings {
+    private readonly _scalingFactor: number;
+    private readonly _displacement: Vector3;
+
+    constructor(scalingFactor: number, displacement: Vector3) {
+        this._scalingFactor = scalingFactor;
+        this._displacement = displacement;
+        console.dir("Scaling factor: ", this._scalingFactor);
+        console.dir("Displacement: ", this._displacement);
+    }
+
+    get scalingFactor() {
+        return this._scalingFactor;
+    }
+
+    get displacement() {
+        return this._displacement;
+    }
+}
 
 export type WorldSettings = {
     points: Points
     lines: LineSegments
     cameraSettings: ReturnType<typeof getCameraProperties>
+    transformationSettings: TransformationSettings
 }
 
 const magnitude = (x: number): number => {
@@ -29,6 +50,19 @@ export const generateRegion = (regionName: string, asSubway: boolean) => {
     const { pointPositions, pointColors, linePositions } = getRegionGeometryData(regionName, true, asSubway);
     return data2Geometry(pointPositions, pointColors, linePositions);
 }
+
+export const getSystemWorldCoordinates = (systemID: number, transform: TransformationSettings, asSubway: boolean = false): Vector3 => {
+    const coordinates = getSystemCoordinates(systemID, asSubway);
+    const v = new Vector3(coordinates.x, coordinates.z, coordinates.y);
+    const t = new Matrix4();
+    const s = new Matrix4();
+    t.makeTranslation(transform.displacement.x, transform.displacement.y, transform.displacement.z);
+    s.makeScale(transform.scalingFactor, transform.scalingFactor, transform.scalingFactor);
+    v.applyMatrix4(t);
+    v.applyMatrix4(s);
+    return v;
+}
+
 
 const data2Geometry = (pointPositions: number[], pointColors: number[], linePositions: number[][]): WorldSettings => {
 
@@ -63,7 +97,6 @@ const data2Geometry = (pointPositions: number[], pointColors: number[], linePosi
         CenterA.y - CenterB.y,
         CenterA.z - CenterB.z
     );
-
     linesGeometry.translate(diff.x, diff.y, diff.z);
 
     linesGeometry.scale(scalingFactor, scalingFactor, scalingFactor);
@@ -71,9 +104,11 @@ const data2Geometry = (pointPositions: number[], pointColors: number[], linePosi
     pointGeometry.scale(scalingFactor, scalingFactor, scalingFactor);
     pointGeometry.computeBoundingSphere();
 
+    const transformationSettings = new TransformationSettings(scalingFactor, diff.clone());
+
     const pointMaterial = materialFromData(pointGeometry.boundingSphere.radius / (4 * Math.log(pointPositions.length / 3)));
     const points = new Points(pointGeometry, pointMaterial)
     const cameraSettings = getCameraProperties(CenterA, pointGeometry.boundingSphere.radius);
 
-    return { points, lines, cameraSettings };
+    return { points, lines, cameraSettings, transformationSettings };
 }

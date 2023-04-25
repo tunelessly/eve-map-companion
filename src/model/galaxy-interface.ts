@@ -32,8 +32,8 @@ export const getRegionGeometryData = (region: string, withLines: boolean = false
     const linePositions = withLines ? linestoGeometry(galaxy.getConnections(region, asSubway)) : [];
     const data = galaxy.getRegionCoordinatesandStatuses(region, asSubway);
 
-    const pointPositions = coordinates2Three(data.map(x => x[0]));
-    const pointColors = security2Color(data.map(x => x[1]));
+    const pointPositions = coordinates2Three(data.map(x => x[1]));
+    const pointColors = security2Color(data.map(x => x[2]));
 
     return { pointPositions, pointColors, linePositions }
 }
@@ -43,8 +43,13 @@ export const getGalaxyGeometryData = () => {
     const linePositions = []
     const data = galaxy.getGalaxyCoordinatesandStatuses()
 
-    const pointPositions = coordinates2Three(data.map(x => x[0]));
-    const pointColors = security2Color(data.map(x => x[1]));
+    const pointPositions = coordinates2Three(data.map(x => x[1]));
+    const pointColors = security2Color(data.map(x => x[2]));
 
     return { pointPositions, pointColors, linePositions }
+}
+
+export const getSystemCoordinates = (systemID: number, asSubway: boolean = false): coordinates3D => {
+    const galaxy = Galaxy.instance;
+    return galaxy.getSystem(systemID, asSubway).map(s => s.coordinates).mapErr(e => console.log(`Error will robinson error: ${e}`)).unwrapOr({ x: 0, y: 0, z: 0 });
 }
