@@ -7,6 +7,7 @@
   import { onMount } from "svelte";
   import eveUniverse from "./model/universe-pretty-1682199656932.json";
   import eveSubway from "./model/region-subway-pretty-1682211913146.json";
+  import { d3View } from "./view/d3/d3View";
 
   let rootHTMLElement: HTMLElement;
   let selectedRegion: string = "-";
@@ -15,6 +16,7 @@
   let controller: Controller;
 
   const changeToRegion = (regionName: string, asSubway: boolean) => {
+    controller.changeView(new d3View(rootHTMLElement));
     controller.displayRegion(regionName, asSubway);
   };
 
@@ -22,8 +24,7 @@
     Galaxy.instance.populateGalaxy(eveUniverse);
     Galaxy.instance.populateGalaxySubway(eveSubway);
     const model = Galaxy.instance;
-    // const view = new webGLView(rootHTMLElement);
-    const view = new CSS3DView(rootHTMLElement);
+    const view = new webGLView(rootHTMLElement);
     controller = new Controller(model, view);
     controller.displayGalaxy();
     regionNames = controller.getRegionNames();

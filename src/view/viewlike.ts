@@ -6,4 +6,5 @@ export interface ViewLike {
         connections: [coordinates3D, coordinates3D][],
     ): void;
     dispose(): void;
+    destroy(): void;
 }

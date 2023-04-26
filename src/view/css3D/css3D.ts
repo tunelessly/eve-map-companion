@@ -25,6 +25,8 @@ export class CSS3DView implements ViewLike {
 
     public dispose() { }
 
+    public destroy() { }
+
     public onWindowResize() {
         const rect = this.rootHTMLElement.getBoundingClientRect();
         const width = rect.width;

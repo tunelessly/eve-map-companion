@@ -23,6 +23,12 @@ export class Controller {
         this._view.update(systemData, connections);
     }
 
+    public changeView = (view: ViewLike) => {
+        this._view.dispose();
+        this._view.destroy()
+        this._view = view;
+    }
+
     public getRegionNames = () => {
         return this._model.getAllRegionNames();
     }

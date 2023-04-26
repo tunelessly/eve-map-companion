@@ -89,6 +89,10 @@ export class webGLView implements ViewLike {
         if (this.renderer) this.renderer.dispose();
     }
 
+    public destroy() {
+        if (this.renderer) this.rootHTMLElement.removeChild(this.renderer.domElement);
+    }
+
     private animate = () => {
         requestAnimationFrame(this.animate);
         this.renderer.render(this.scene, this.camera);
