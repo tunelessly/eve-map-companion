@@ -1,7 +1,6 @@
 import type { ViewLike } from "../viewlike";
 import type { coordinates3D } from "../../model/galaxy.js";
 import * as d3 from "d3";
-import { append } from "svelte/internal";
 
 export class d3View implements ViewLike {
     private readonly _rootHTMLElement: HTMLElement;
@@ -28,21 +27,34 @@ export class d3View implements ViewLike {
         const rect = this.rootHTMLElement.getBoundingClientRect()
         const width = rect.width;
         const height = rect.height;
-        const data = systemData.map(x => [x[1].x, x[1].y]);
+        const data = systemData.map(x => [x[1].x, x[1].y, x[1].z]);
 
-        const dataMagnitude = systemData.flatMap(x => [x[1].x, x[1].y, x[1].z]).reduce((acc, curr) => {
-            const m = this.magnitude(curr);
-            if (m >= acc) {
-                return m;
-            }
-            else {
-                return acc;
-            }
-        }, 1);
+        const subwayMode = systemData.reduce((acc, curr) => {
+            return curr[1].y === 0;
+        }, true);
+        console.log(`Am I in subway mode? ${subwayMode}`);
 
-        const magnitudeDiffFrom100 = Math.log10(100) - Math.log10(dataMagnitude);
-        const scalingFactor = Math.pow(10, magnitudeDiffFrom100);
-        console.log(`Data: ${dataMagnitude} Scaling factor: ${scalingFactor}`);
+        const xDomain = data.reduce((acc, curr) => {
+            const x = curr[0];
+            const smallest = Math.min(x, acc[0]);
+            const largest = Math.max(x, acc[1]);
+            return [smallest, largest];
+        }, [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER]);
+        const xScaler = d3.scaleLinear()
+            .domain(xDomain)
+            .range([-500, 500]);
+
+        const yDomain = data.reduce((acc, curr) => {
+            const y = subwayMode ? curr[2] : curr[1];
+            const smallest = Math.min(y, acc[0]);
+            const largest = Math.max(y, acc[1]);
+            return [smallest, largest];
+        }, [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER]);
+        const yScaler = d3.scaleLinear()
+            .domain(yDomain)
+            .range([-500, 500]);
+
+
 
         const zoom = d3.zoom().scaleExtent([1, 8]).on("zoom", this.zoomed);
         const svg = d3.create("svg")
@@ -56,9 +68,9 @@ export class d3View implements ViewLike {
             .data(data)
             .enter()
             .append("circle")
-            .attr("cx", d => String(d[0] * scalingFactor))
-            .attr("cy", d => String(d[1] * scalingFactor))
-            .attr("r", 5.25)
+            .attr("cx", d => String(xScaler(d[0])))
+            .attr("cy", d => subwayMode ? String(-yScaler(d[2])) : String(-yScaler(d[1])))
+            .attr("r", 3)
             .style("fill", "red")
             .attr("stroke", "steelblue")
             .attr("stroke-width", 1.5)
