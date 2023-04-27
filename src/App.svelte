@@ -16,7 +16,14 @@
   let controller: Controller;
 
   const changeToRegion = (regionName: string, asSubway: boolean) => {
-    controller.changeView(new d3View(rootHTMLElement));
+    if (selectedRegion == "-") return;
+    if (asSubway) {
+      console.log("SVG");
+      controller.changeView(new d3View(rootHTMLElement));
+    } else {
+      console.log("WebGL");
+      controller.changeView(new webGLView(rootHTMLElement));
+    }
     controller.displayRegion(regionName, asSubway);
   };
 

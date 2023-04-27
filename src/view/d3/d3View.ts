@@ -4,11 +4,13 @@ import * as d3 from "d3";
 
 export class d3View implements ViewLike {
     private readonly _rootHTMLElement: HTMLElement;
+    private _SVG: d3.Selection<SVGSVGElement, undefined, null, undefined>;
     private _G: d3.Selection<d3.BaseType, undefined, null, undefined>;
     private _translationVec: number[];
 
 
     private get rootHTMLElement() { return this._rootHTMLElement; }
+    private get SVG() { return this._SVG; }
     private get G() { return this._G; }
     private get translationVec() { return this._translationVec; }
 
@@ -18,7 +20,11 @@ export class d3View implements ViewLike {
 
     public dispose() { }
 
-    public destroy() { }
+    public destroy() {
+        const SVGHTMLElement =
+            this.rootHTMLElement.getElementsByTagName(this.SVG.node().tagName)[0];
+        this.rootHTMLElement.removeChild(SVGHTMLElement);
+    }
 
     public update(
         systemData: [string, coordinates3D, number][],
@@ -103,6 +109,7 @@ export class d3View implements ViewLike {
         } else {
             this.rootHTMLElement.replaceChild(svg.node(), previousSVG);
         }
+        this._SVG = svg;
         this._G = G;
         this._translationVec = translationVec;
     }
