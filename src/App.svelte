@@ -50,7 +50,11 @@
     const region = params.get("region");
     const asSubway = params.get("subway") === "true";
     let view: ViewLike;
-    if (region !== undefined && asSubway !== undefined) {
+    if (
+      region !== undefined &&
+      region !== Galaxy.instance.name &&
+      asSubway !== undefined
+    ) {
       console.log("Parsed url with params", region, asSubway);
       if (asSubway) view = new SVGView(rootHTMLElement);
       else view = new webGLView(rootHTMLElement);
@@ -69,7 +73,11 @@
       asSubway = params.asSubway;
       selectedRegion = params.region;
       controller = new Controller(model, params.view);
-      controller.displayRegion(params.region, params.asSubway);
+      if (params.region === Galaxy.instance.name) {
+        controller.displayGalaxy();
+      } else {
+        controller.displayRegion(params.region, params.asSubway);
+      }
     } else {
       const model = Galaxy.instance;
       const view = new webGLView(rootHTMLElement);
