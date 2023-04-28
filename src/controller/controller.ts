@@ -13,6 +13,10 @@ export class Controller {
 
     public displayGalaxy = () => {
         const systemData = this._model.getGalaxyCoordinatesandStatuses()
+        const urlSearchParams = new URLSearchParams();
+        urlSearchParams.set("region", this._model.name);
+        urlSearchParams.set("subway", String(false));
+        history.replaceState({}, '', `${window.location.pathname}?${urlSearchParams}`)
         this._view.dispose();
         this._view.update(systemData, []);
     }

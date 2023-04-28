@@ -18,7 +18,15 @@
   let controller: Controller;
 
   const changeToRegion = (regionName: string, asSubway: boolean) => {
-    if (selectedRegion == "-") return;
+    if (selectedRegion == "-") {
+      return;
+    } else if (selectedRegion === Galaxy.instance.name) {
+      const view = new webGLView(rootHTMLElement);
+      controller.changeView(view);
+      controller.displayGalaxy();
+      return;
+    }
+
     if (asSubway) {
       console.log("SVG");
       const view = new SVGView(rootHTMLElement);
@@ -68,7 +76,7 @@
       controller = new Controller(model, view);
       controller.displayGalaxy();
     }
-    regionNames = controller.getRegionNames();
+    regionNames = [Galaxy.instance.name].concat(controller.getRegionNames());
   });
 </script>
 
