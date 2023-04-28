@@ -1,5 +1,6 @@
 import type { ViewLike } from "../viewlike";
 import type { coordinates3D } from "../../model/galaxy.js";
+import { RGBtofloat, HSV2RGB, sectoHSV } from "../utils/utils";
 import * as d3 from "d3";
 
 export class SVGView implements ViewLike {
@@ -42,7 +43,12 @@ export class SVGView implements ViewLike {
         const rect = this.rootHTMLElement.getBoundingClientRect();
         const width = rect.width;
         const height = rect.height;
-        const systemCoordinates = systemData.map(x => [x[1].x, x[1].y, x[1].z]);
+        const systemCoordinates = systemData.map(x => {
+            return {
+                ...x[1],
+                ...HSV2RGB(sectoHSV(x[2])),
+            };
+        });
         const connectionCoordinates = connectionsFiltered.map(c => {
             const start = c[0];
             const end = c[1];
@@ -57,15 +63,28 @@ export class SVGView implements ViewLike {
 
         // Both axes must have the same scaling function
         // for obvious aspect ratio reasons
-        const domain = this.domain(systemCoordinates, asSubway);
+        const domain = this.domain(systemCoordinates.map(x => [x.x, x.y, x.z]), asSubway);
         const scaler = d3.scaleLinear().domain(domain).range([0, Math.min(width, height) * 0.90]);
 
-        const scaledSystemCoordinates = systemCoordinates.map(c => c.map(scaler));
+        const scaledSystemCoordinates = systemCoordinates.map(c => {
+            return {
+                x: scaler(c.x),
+                y: scaler(c.y),
+                z: scaler(c.z),
+                r: c.r,
+                g: c.g,
+                b: c.b,
+            }
+        });
         const scaledConnections = connectionCoordinates.map(c => {
             return [c[0].map(scaler), c[1].map(scaler)];
         });
 
-        const center = this.boundingBox(scaledSystemCoordinates).center;
+        const center = this.boundingBox(scaledSystemCoordinates.map(
+            s => {
+                return [s.x, s.y, s.z];
+            }
+        )).center;
         const translationVec = [(width / 2) - center[0], (height / 2) + (asSubway ? center[2] : center[1])]; // Because Y grows towards the 'down' direction
         const scaleExtent: [number, number] = [1, 8];
 
@@ -102,13 +121,13 @@ export class SVGView implements ViewLike {
             .data(scaledSystemCoordinates)
             .enter()
             .append("circle")
-            .attr("cx", d => String(d[0]))
-            .attr("cy", d => asSubway ? String(-d[2]) : String(-d[1]))
+            .attr("cx", d => String(d.x))
+            .attr("cy", d => asSubway ? String(-d.z) : String(-d.y))
             .attr("r", 3)
             .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
-            .style("fill", "red")
-            .attr("stroke", "steelblue")
-            .attr("stroke-width", 1.5)
+            .style("fill", d => `rgb(${d.r},${d.g},${d.b})`)
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
             ;
 
         const previousSVG =

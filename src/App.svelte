@@ -3,7 +3,7 @@
   import { Controller } from "./controller/controller";
   import type { ViewLike } from "./view/viewlike";
   import { webGLView } from "./view/webGL/webGL";
-  import { SVGView } from "./view/SVG/d3View";
+  import { SVGView } from "./view/SVG/SVGView";
   import { Galaxy } from "./model/galaxy";
   import { onMount } from "svelte";
   import eveUniverse from "./model/universe-pretty-1682199656932.json";
