@@ -52,7 +52,7 @@ export class d3View implements ViewLike {
         // Both axes must have the same scaling function
         // for obvious aspect ratio reasons
         const domain = this.domain(systemCoordinates, asSubway);
-        const scaler = d3.scaleLinear().domain(domain).range([0, Math.min(width, height) * 0.9]);
+        const scaler = d3.scaleLinear().domain(domain).range([0, Math.min(width, height) * 0.90]);
 
         const scaledSystemCoordinates = systemCoordinates.map(c => c.map(scaler));
         const scaledConnections = connectionCoordinates.map(c => {
@@ -114,19 +114,6 @@ export class d3View implements ViewLike {
         this._translationVec = translationVec;
     }
 
-    private centroid = (coordinates: number[][]): number[] => {
-        return coordinates.reduce((acc, val) => {
-            const x = val[0];
-            const y = val[1];
-            const z = val[2];
-            acc[0] += x;
-            acc[1] += y;
-            acc[2] += z;
-            return acc;
-        }, [0, 0, 0])
-            .map(x => x / coordinates.length)
-    }
-
     private boundingBox = (coordinates: number[][]): {
         corner1: [number, number, number],
         corner2: [number, number, number],
@@ -173,7 +160,8 @@ export class d3View implements ViewLike {
             return [smallest, largest];
         }, [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER]);
 
-        return [Math.min(xDomain[0], yDomain[0]), Math.max(xDomain[1], yDomain[1])];
+        const retVal = [Math.min(xDomain[0], yDomain[0]), Math.max(xDomain[1], yDomain[1])]
+        return retVal;
     }
 
     private zoomed = (event) => {

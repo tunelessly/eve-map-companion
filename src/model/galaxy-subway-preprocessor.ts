@@ -121,6 +121,41 @@ const offendingRegions = [
     "The Spire",
 ]
 
+export const regionTranslator = (data: EvESubway): EvESubway => {
+    Object.keys(data).forEach(key => {
+        const region = data[key];
+        const boundingBox = region.reduce((acc, val) => {
+            const x = val.coordinates.x;
+            const y = val.coordinates.y;
+            const z = val.coordinates.z;
+            const corner1 = acc.corner1;
+            const corner2 = acc.corner2;
+            if (x <= corner1[0]) corner1[0] = x;
+            if (y <= corner1[1]) corner1[1] = y;
+            if (z <= corner1[2]) corner1[2] = z;
+            if (x >= corner2[0]) corner2[0] = x;
+            if (y >= corner2[1]) corner2[1] = y;
+            if (z >= corner2[2]) corner2[2] = z;
+            acc.center = [(corner2[0] + corner1[0]) / 2, (corner2[1] + corner1[1]) / 2, (corner2[2] + corner1[2]) / 2];
+            return acc;
+        }, {
+            corner1: [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+            corner2: [Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
+            center: [0, 0, 0]
+        });
+        const center = boundingBox.center;
+        const translationVec = [-center[0], -center[1], -center[2]];
+        region.forEach(system => {
+            const coordinates = system.coordinates;
+            coordinates.x += translationVec[0];
+            coordinates.y += translationVec[1];
+            coordinates.z += translationVec[2];
+        });
+    });
+
+    return data;
+}
+
 export const regionPreProcess = (data: EvESubway): EvESubway => {
 
     offendingRegions.forEach(regionName => {

@@ -1,5 +1,5 @@
 import { forceSimulation, forceLink, forceManyBody, forceCollide } from "d3-force";
-import { regionPreProcess } from './galaxy-subway-preprocessor.js';
+import { regionPreProcess, regionTranslator } from './galaxy-subway-preprocessor.js';
 import { ok, err, Result } from "neverthrow";
 
 type RegionName = string;
@@ -155,7 +155,7 @@ export class Galaxy {
     }
 
     public populateGalaxySubway(sourceData: EvESubway) {
-        const processedData = regionPreProcess(sourceData);
+        const processedData = regionTranslator(regionPreProcess(sourceData));
 
         Object.keys(processedData)
             .forEach(region => {
