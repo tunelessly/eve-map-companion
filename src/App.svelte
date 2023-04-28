@@ -13,6 +13,8 @@
   let selectedRegion: string = "-";
   let regionNames: string[] = [];
   let asSubway: boolean = false;
+  $: asSubway;
+  $: selectedRegion;
   let controller: Controller;
 
   const changeToRegion = (regionName: string, asSubway: boolean) => {
@@ -56,6 +58,8 @@
     if (window.location.search.length > 0) {
       const model = Galaxy.instance;
       const params = fromURLSearch(window.location.search);
+      asSubway = params.asSubway;
+      selectedRegion = params.region;
       controller = new Controller(model, params.view);
       controller.displayRegion(params.region, params.asSubway);
     } else {
