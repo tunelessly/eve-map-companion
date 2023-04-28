@@ -20,6 +20,10 @@ export class Controller {
     public displayRegion = (regionName: string, asSubway: boolean) => {
         const systemData = this._model.getRegionCoordinatesandStatuses(regionName, asSubway);
         const connections = this._model.getConnections(regionName, asSubway);
+        const urlSearchParams = new URLSearchParams();
+        urlSearchParams.set("region", regionName);
+        urlSearchParams.set("subway", String(asSubway));
+        history.replaceState({}, '', `${window.location.pathname}?${urlSearchParams}`)
         this._view.dispose();
         this._view.update(systemData, connections);
     }

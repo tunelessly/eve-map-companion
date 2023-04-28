@@ -1,18 +1,18 @@
 <script lang="ts">
   console.log = import.meta.env.DEV ? console.log : () => {};
   import { Controller } from "./controller/controller";
+  import type { ViewLike } from "./view/viewlike";
   import { webGLView } from "./view/webGL/webGL";
-  import { CSS3DView } from "./view/css3D/css3D";
+  import { SVGView } from "./view/SVG/d3View";
   import { Galaxy } from "./model/galaxy";
   import { onMount } from "svelte";
   import eveUniverse from "./model/universe-pretty-1682199656932.json";
   import eveSubway from "./model/region-subway-pretty-1682211913146.json";
-  import { SVGView } from "./view/d3/d3View";
 
   let rootHTMLElement: HTMLElement;
   let selectedRegion: string = "-";
   let regionNames: string[] = [];
-  let asSubway: boolean;
+  let asSubway: boolean = false;
   let controller: Controller;
 
   const changeToRegion = (regionName: string, asSubway: boolean) => {
@@ -29,13 +29,41 @@
     controller.displayRegion(regionName, asSubway);
   };
 
+  const fromURLSearch = (
+    qs: string
+  ): {
+    view: ViewLike;
+    region: string;
+    asSubway: boolean;
+  } => {
+    const params = new URLSearchParams(qs);
+    const region = params.get("region");
+    const asSubway = params.get("subway") === "true";
+    let view: ViewLike;
+    if (region !== undefined && asSubway !== undefined) {
+      console.log("Parsed url with params", region, asSubway);
+      if (asSubway) view = new SVGView(rootHTMLElement);
+      else view = new webGLView(rootHTMLElement);
+    } else {
+      view = new webGLView(rootHTMLElement);
+    }
+    return { view, region, asSubway };
+  };
+
   onMount(() => {
     Galaxy.instance.populateGalaxy(eveUniverse);
     Galaxy.instance.populateGalaxySubway(eveSubway);
-    const model = Galaxy.instance;
-    const view = new webGLView(rootHTMLElement);
-    controller = new Controller(model, view);
-    controller.displayGalaxy();
+    if (window.location.search.length > 0) {
+      const model = Galaxy.instance;
+      const params = fromURLSearch(window.location.search);
+      controller = new Controller(model, params.view);
+      controller.displayRegion(params.region, params.asSubway);
+    } else {
+      const model = Galaxy.instance;
+      const view = new webGLView(rootHTMLElement);
+      controller = new Controller(model, view);
+      controller.displayGalaxy();
+    }
     regionNames = controller.getRegionNames();
   });
 </script>
