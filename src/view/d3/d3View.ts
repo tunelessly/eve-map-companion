@@ -2,7 +2,7 @@ import type { ViewLike } from "../viewlike";
 import type { coordinates3D } from "../../model/galaxy.js";
 import * as d3 from "d3";
 
-export class d3View implements ViewLike {
+export class SVGView implements ViewLike {
     private readonly _rootHTMLElement: HTMLElement;
     private _SVG: d3.Selection<SVGSVGElement, undefined, null, undefined>;
     private _G: d3.Selection<d3.BaseType, undefined, null, undefined>;
@@ -69,10 +69,11 @@ export class d3View implements ViewLike {
         const translationVec = [(width / 2) - center[0], (height / 2) + (asSubway ? center[2] : center[1])]; // Because Y grows towards the 'down' direction
         const scaleExtent: [number, number] = [1, 8];
 
-        const zoom = d3.zoom().scaleExtent(scaleExtent).on("zoom", this.zoomed);
+        const zoom = d3.zoom()
+            .scaleExtent(scaleExtent)
+            .translateExtent([[0, 0], [width, height]])
+            .on("zoom", this.zoomed);
         const svg = d3.create("svg")
-            // .attr("preserveAspectRatio", "xMinYMin meet")
-            // .classed("svg-container", true)
             .attr("width", width)
             .attr("height", height)
             .call(zoom)

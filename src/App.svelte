@@ -7,7 +7,7 @@
   import { onMount } from "svelte";
   import eveUniverse from "./model/universe-pretty-1682199656932.json";
   import eveSubway from "./model/region-subway-pretty-1682211913146.json";
-  import { d3View } from "./view/d3/d3View";
+  import { SVGView } from "./view/d3/d3View";
 
   let rootHTMLElement: HTMLElement;
   let selectedRegion: string = "-";
@@ -19,7 +19,7 @@
     if (selectedRegion == "-") return;
     if (asSubway) {
       console.log("SVG");
-      const view = new d3View(rootHTMLElement);
+      const view = new SVGView(rootHTMLElement);
       controller.changeView(view);
     } else {
       console.log("WebGL");
