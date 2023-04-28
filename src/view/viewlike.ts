@@ -7,4 +7,5 @@ export interface ViewLike {
     ): void;
     dispose(): void;
     destroy(): void;
+    onWindowResize(): void;
 }

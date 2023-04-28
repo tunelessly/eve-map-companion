@@ -50,6 +50,7 @@ export class webGLView implements ViewLike {
     get rootHTMLElement() { return this._rootHTMLElement; }
 
     public onWindowResize() {
+        console.log("Yo");
         const rect = this.rootHTMLElement.getBoundingClientRect();
         const width = rect.width;
         const height = rect.height;

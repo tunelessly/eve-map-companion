@@ -6,12 +6,16 @@ export class d3View implements ViewLike {
     private readonly _rootHTMLElement: HTMLElement;
     private _SVG: d3.Selection<SVGSVGElement, undefined, null, undefined>;
     private _G: d3.Selection<d3.BaseType, undefined, null, undefined>;
+    private _systemData: [string, coordinates3D, number][];
+    private _connections: [coordinates3D, coordinates3D][];
     private _translationVec: number[];
 
 
     private get rootHTMLElement() { return this._rootHTMLElement; }
     private get SVG() { return this._SVG; }
     private get G() { return this._G; }
+    private get systemData() { return this._systemData; }
+    private get connections() { return this._connections; }
     private get translationVec() { return this._translationVec; }
 
     constructor(rootHTMLElement: HTMLElement) {
@@ -30,6 +34,8 @@ export class d3View implements ViewLike {
         systemData: [string, coordinates3D, number][],
         connections: [coordinates3D, coordinates3D][],
     ) {
+        this._systemData = systemData;
+        this._connections = connections;
 
         const connectionsFiltered = connections.filter(x => x[0] !== undefined && x[1] !== undefined); //TODO
 
@@ -65,6 +71,8 @@ export class d3View implements ViewLike {
 
         const zoom = d3.zoom().scaleExtent(scaleExtent).on("zoom", this.zoomed);
         const svg = d3.create("svg")
+            // .attr("preserveAspectRatio", "xMinYMin meet")
+            // .classed("svg-container", true)
             .attr("width", width)
             .attr("height", height)
             .call(zoom)
@@ -169,5 +177,7 @@ export class d3View implements ViewLike {
         this.G.attr("transform", transform);
     }
 
-    public onWindowResize() { }
+    public onWindowResize() {
+        this.update(this.systemData, this.connections);
+    }
 }

@@ -8,6 +8,7 @@ export class Controller {
     constructor(model: Galaxy, view: ViewLike) {
         this._model = model;
         this._view = view;
+        window.addEventListener("resize", this._view.onWindowResize.bind(this._view));
     }
 
     public displayGalaxy = () => {
@@ -25,8 +26,10 @@ export class Controller {
 
     public changeView = (view: ViewLike) => {
         this._view.dispose();
-        this._view.destroy()
+        this._view.destroy();
+        window.removeEventListener("resize", this._view.onWindowResize);
         this._view = view;
+        window.addEventListener("resize", this._view.onWindowResize.bind(this._view));
     }
 
     public getRegionNames = () => {
