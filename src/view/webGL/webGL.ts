@@ -111,6 +111,7 @@ export class webGLView implements ViewLike {
         const cameraProperties = data.cameraSettings;
         const lines = data.lines;
         const points = data.points;
+        const geometryRadius = points.geometry.boundingSphere.radius;
 
         const rect = this.rootHTMLElement.getBoundingClientRect();
         const width = rect.width;
@@ -137,6 +138,15 @@ export class webGLView implements ViewLike {
         );
         scene.add(camera);
         const cameraControls = new OrbitControls(camera, renderer.domElement);
+        const minPan = new Vector3(- geometryRadius, -geometryRadius, -geometryRadius);
+        const maxPan = new Vector3(geometryRadius, geometryRadius, geometryRadius);
+        const _v = new Vector3();
+        cameraControls.addEventListener("change", () => {
+            _v.copy(cameraControls.target);
+            cameraControls.target.clamp(minPan, maxPan);
+            _v.sub(cameraControls.target);
+            camera.position.sub(_v);
+        });
 
         renderer.setSize(width, height);
         const previousRenderer =
