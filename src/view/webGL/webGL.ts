@@ -138,6 +138,8 @@ export class webGLView implements ViewLike {
         );
         scene.add(camera);
         const cameraControls = new OrbitControls(camera, renderer.domElement);
+        // Thank you EliasHasle
+        // https://discourse.threejs.org/t/how-to-limit-pan-in-orbitcontrols-for-orthographiccamera/9061/9
         const minPan = new Vector3(- geometryRadius, -geometryRadius, -geometryRadius);
         const maxPan = new Vector3(geometryRadius, geometryRadius, geometryRadius);
         const _v = new Vector3();
@@ -147,6 +149,7 @@ export class webGLView implements ViewLike {
             _v.sub(cameraControls.target);
             camera.position.sub(_v);
         });
+        ////////////////////////////////////////////////////////////////////////////////
 
         renderer.setSize(width, height);
         const previousRenderer =
