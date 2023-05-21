@@ -45,6 +45,7 @@ export class SVGView implements ViewLike {
         const height = rect.height;
         const systemCoordinates = systemData.map(x => {
             return {
+                systemName: x[0],
                 ...x[1],
                 ...HSV2RGB(sectoHSV(x[2])),
             };
@@ -68,6 +69,7 @@ export class SVGView implements ViewLike {
 
         const scaledSystemCoordinates = systemCoordinates.map(c => {
             return {
+                systemName: c.systemName,
                 x: scaler(c.x),
                 y: scaler(c.y),
                 z: scaler(c.z),
@@ -101,6 +103,7 @@ export class SVGView implements ViewLike {
         // Painter's algorithm
         const G = svg.append("svg:g");
         G
+            .attr("viewbox", [0, 0, width, height])
             .selectAll("line")
             .data(scaledConnections)
             .enter()
@@ -112,11 +115,11 @@ export class SVGView implements ViewLike {
             .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
             .attr("fill", "none")
             .attr("stroke", "white")
+            .attr("stroke-width", "0.05%")
             .attr("stroke-linejoin", "round")
             ;
 
         G
-            .attr("viewbox", [0, 0, width, height])
             .selectAll("circle")
             .data(scaledSystemCoordinates)
             .enter()
@@ -125,10 +128,30 @@ export class SVGView implements ViewLike {
             .attr("cy", d => asSubway ? String(-d.z) : String(-d.y))
             .attr("r", 3)
             .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
+            .attr("system-name", d => d.systemName)
             .style("fill", d => `rgb(${d.r},${d.g},${d.b})`)
             .attr("stroke", "black")
             .attr("stroke-width", 1)
             ;
+
+        G
+            .selectAll("text")
+            .data(scaledSystemCoordinates)
+            .enter()
+            .append("text")
+            .attr("x", d => String(d.x))
+            .attr("y", d => asSubway ? String(-d.z + height * 0.0105) : String(-d.y + height * 0.0105))
+            .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
+            .attr("dominant-baseline", "middle")
+            .attr("text-anchor", "middle")
+            .attr("fill", "white")
+            .attr("font-size", "0.5rem")
+            .attr("stroke", "black")
+            .attr("stroke-width", "1px")
+            .attr("paint-order", "stroke")
+            .text(d => d.systemName)
+            ;
+
 
         const previousSVG =
             this.rootHTMLElement.getElementsByTagName(svg.node().tagName)[0];
@@ -140,6 +163,22 @@ export class SVGView implements ViewLike {
         this._SVG = svg;
         this._G = G;
         this._translationVec = translationVec;
+
+        // Bounding boxes don't exist before DOM interactions
+        // So we must put this after they've happened
+        G
+            .selectAll("text")
+            .each(function (data: any, index) {
+                const dimensions = (this as any).getBBox();
+                G.insert("rect", "text")
+                    .attr("x", dimensions.x)
+                    .attr("y", dimensions.y)
+                    .attr("width", dimensions.width * 1.05)
+                    .attr("height", dimensions.height * 1.05)
+                    .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
+                    .style("fill", () => `rgb(${data.r},${data.g},${data.b})`)
+            })
+            ;
     }
 
     private boundingBox = (coordinates: number[][]): {
