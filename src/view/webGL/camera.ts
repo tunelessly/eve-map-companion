@@ -1,11 +1,10 @@
-import type { PerspectiveCameraProperties } from "@threlte/core";
 import type { Vector3 } from "three";
 
 
-export const getCameraProperties = (center: Vector3, radius: number): PerspectiveCameraProperties => {
+export const getCameraProperties = (center: Vector3, radius: number) => {
 
     console.log(`Bounding sphere radius: ${radius}`);
-    const cameraProperties: PerspectiveCameraProperties = {
+    const cameraProperties = {
         near: 0.01,
         far: radius * 20,
         fov: 20,

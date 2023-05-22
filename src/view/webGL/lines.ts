@@ -16,6 +16,5 @@ export const lineGeometryFromData = (positions: number[][]): LineSegments => {
     });
 
     let line: LineSegments = new LineSegments(lineGeometry, lineMaterial);
-    line.computeLineDistances();
     return line;
 }

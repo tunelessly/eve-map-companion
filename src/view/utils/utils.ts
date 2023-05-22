@@ -1,10 +1,10 @@
-type RGB = {
+type normalizedRGB = RGB;
+
+export type RGB = {
     r: number,
     g: number,
     b: number
 }
-
-type normalizedRGB = RGB;
 
 type HSV = {
     h: number,
@@ -12,11 +12,8 @@ type HSV = {
     v: number
 }
 
-export type coordinates3D = {
-    systemID?: any
-    x: number,
-    y: number,
-    z: number
+export const RGBtofloat = (rgb: RGB): normalizedRGB => {
+    return { r: rgb.r / 255, g: rgb.g / 255, b: rgb.b / 255 };
 }
 
 export const HSV2RGB = (hsv: HSV): RGB => {
@@ -59,32 +56,4 @@ export const sectoHSV = (securityStatus: number): HSV => {
 
     const hue: number = Math.round((180 * mSecurityStatus));
     return { h: hue, s: 100, v: 100 }
-}
-
-export const RGBtofloat = (rgb: RGB): normalizedRGB => {
-    return { r: rgb.r / 255, g: rgb.g / 255, b: rgb.b / 255 };
-}
-
-export const coordinatestoGeometry = (coordinates: coordinates3D[]): number[] => {
-    let retVal: number[] = [];
-    for (let coords of coordinates) {
-        // Remap the coordinates from sane to OpenGL
-        retVal.push(coords.x, coords.z, coords.y);
-    }
-    return retVal;
-}
-
-export const linestoGeometry = (coordinates: [coordinates3D, coordinates3D][]): number[][] => {
-    const retVal: number[][] = [];
-    // const toPrint = {};
-    for (let coords of coordinates) {
-        let originSystem = coords[0];
-        let targetSystem = coords[1];
-        if (originSystem === undefined && targetSystem === undefined) continue; // TODO
-        // Remap the coordinates from sane to OpenGL
-        retVal.push([originSystem.x, originSystem.z, originSystem.y]);
-        // Remap the coordinates from sane to OpenGL
-        retVal.push([targetSystem.x, targetSystem.z, targetSystem.y]);
-    }
-    return retVal;
 }

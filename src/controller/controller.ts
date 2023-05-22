@@ -1,80 +1,47 @@
-import { getGalaxyGeometryData, getRegionGeometryData, getAllRegionNames } from "../model/galaxy-interface.js";
-import { pointGeometryFromData, materialFromData } from "./points.js";
-import { lineGeometryFromData } from "./lines.js";
-import { getCameraProperties } from "./camera.js";
-import { Points, type LineSegments } from "three";
-import { Vector3 } from "three";
-import type { PerspectiveCameraProperties } from "@threlte/core";
+import type { ViewLike } from "../view/viewlike";
+import type { Galaxy } from "../model/galaxy";
 
-export type WorldSettings = {
-    points: Points
-    lines: LineSegments
-    cameraSettings: PerspectiveCameraProperties
-}
+export class Controller {
+    private _model: Galaxy;
+    private _view: ViewLike;
 
-const magnitude = (x: number): number => {
-    return Math.pow(10, Math.floor(Math.log10(x)));
-}
+    constructor(model: Galaxy, view: ViewLike) {
+        this._model = model;
+        this._view = view;
+        window.addEventListener("resize", this._view.onWindowResize.bind(this._view));
+    }
 
-export const getRegionNames = (): string[] => {
-    return getAllRegionNames();
-}
+    public displayGalaxy = () => {
+        const systemData = this._model.getGalaxyCoordinatesandStatuses()
+        const urlSearchParams = new URLSearchParams();
+        urlSearchParams.set("region", this._model.name);
+        urlSearchParams.set("subway", String(false));
+        history.replaceState({}, '', `${window.location.pathname}?${urlSearchParams}`)
+        this._view.dispose();
+        this._view.update(systemData, []);
+    }
 
-export const generateGalaxy = (): WorldSettings => {
-    const { pointPositions, pointColors, linePositions } =
-        getGalaxyGeometryData();
-    return data2Geometry(pointPositions, pointColors, linePositions);
-}
+    public displayRegion = (regionName: string, asSubway: boolean) => {
+        const systemData = this._model.getRegionCoordinatesandStatuses(regionName, asSubway);
+        const connections = this._model.getConnections(regionName, asSubway);
+        const urlSearchParams = new URLSearchParams();
+        urlSearchParams.set("region", regionName);
+        urlSearchParams.set("subway", String(asSubway));
+        history.replaceState({}, '', `${window.location.pathname}?${urlSearchParams}`)
+        this._view.dispose();
+        this._view.update(systemData, connections);
+    }
 
-export const generateRegion = (regionName: string, asSubway: boolean) => {
-    const { pointPositions, pointColors, linePositions } = getRegionGeometryData(regionName, true, asSubway);
-    return data2Geometry(pointPositions, pointColors, linePositions);
-}
+    public changeView = (view: ViewLike) => {
+        this._view.dispose();
+        this._view.destroy();
+        window.removeEventListener("resize", this._view.onWindowResize);
+        this._view = view;
+        window.addEventListener("resize", this._view.onWindowResize.bind(this._view));
+    }
 
-const data2Geometry = (pointPositions: number[], pointColors: number[], linePositions: number[][]): WorldSettings => {
+    public getRegionNames = () => {
+        return this._model.getAllRegionNames();
+    }
 
-    const dataMagnitude = pointPositions.reduce((acc, curr) => {
-        const m = magnitude(curr);
-        if (m >= acc) {
-            return m;
-        }
-        else {
-            return acc;
-        }
-    }, 1);
-
-    const magnitudeDiffFrom100 = Math.log10(100) - Math.log10(dataMagnitude);
-    const scalingFactor = Math.pow(10, magnitudeDiffFrom100);
-    console.log(`Data: ${dataMagnitude} Scaling factor: ${scalingFactor}`);
-
-    const pointGeometry = pointGeometryFromData(pointPositions, pointColors);
-    pointGeometry.computeBoundingSphere();
-
-    const lines = lineGeometryFromData(linePositions);
-    const linesGeometry = lines.geometry;
-    linesGeometry.computeBoundingSphere();
-
-    const v0 = pointGeometry.boundingSphere.center;
-    const CenterB = new Vector3(v0.x, v0.y, v0.z);
-    pointGeometry.center();
-    const v1 = pointGeometry.boundingSphere.center;
-    const CenterA = new Vector3(v1.x, v1.y, v1.z)
-    const diff = new Vector3(
-        CenterA.x - CenterB.x,
-        CenterA.y - CenterB.y,
-        CenterA.z - CenterB.z
-    );
-
-    linesGeometry.translate(diff.x, diff.y, diff.z);
-
-    linesGeometry.scale(scalingFactor, scalingFactor, scalingFactor);
-    linesGeometry.computeBoundingSphere();
-    pointGeometry.scale(scalingFactor, scalingFactor, scalingFactor);
-    pointGeometry.computeBoundingSphere();
-
-    const pointMaterial = materialFromData(pointGeometry.boundingSphere.radius / (4 * Math.log(pointPositions.length / 3)));
-    const points = new Points(pointGeometry, pointMaterial)
-    const cameraSettings = getCameraProperties(CenterA, pointGeometry.boundingSphere.radius);
-
-    return { points, lines, cameraSettings };
 }
