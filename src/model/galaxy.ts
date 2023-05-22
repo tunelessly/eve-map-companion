@@ -1,4 +1,6 @@
-import { forceSimulation, forceLink, forceManyBody, forceCollide } from "d3-force";
+// import { forceSimulation, forceLink, forceManyBody, forceCollide } from "d3-force";
+import * as d3 from "d3";
+import * as cola from "webcola";
 import { regionPreProcess, regionTranslator } from './galaxy-subway-preprocessor.js';
 import { ok, err, Result } from "neverthrow";
 
@@ -155,7 +157,8 @@ export class Galaxy {
     }
 
     public populateGalaxySubway(sourceData: EvESubway) {
-        const processedData = regionTranslator(regionPreProcess(sourceData));
+        // const processedData = regionTranslator(regionPreProcess(sourceData));
+        const processedData = sourceData;
 
         Object.keys(processedData)
             .forEach(region => {
@@ -354,12 +357,33 @@ export class Galaxy {
                         }).filter(x => x !== undefined); // Oh my god
                     });
                 }).map(links => {
-                    const simulation = forceSimulation(nodes)
-                        .force("link", forceLink().id((x: Node) => x.systemID).links(links).iterations(10).strength(1))
-                        .force("charge", forceManyBody())
-                        .force("collide", forceCollide().radius(15))
-                        .stop();
-                    simulation.tick(500);
+                    // const simulation = forceSimulation(nodes)
+                    //     .force("link", forceLink().id((x: Node) => x.systemID).links(links).iterations(10).strength(1))
+                    //     .force("charge", forceManyBody())
+                    //     .force("collide", forceCollide().radius(15))
+                    //     .stop();
+                    // simulation.tick(500);
+
+                    const newLinks = links.map(link => {
+                        const sourceIdx = nodes.map(node => node.systemID).indexOf(link.source);
+                        const targetIdx = nodes.map(node => node.systemID).indexOf(link.target);
+                        return {
+                            source: sourceIdx,
+                            target: targetIdx,
+                        };
+                    });
+
+                    const simulation2 = cola.d3adaptor(d3)
+                        .nodes(nodes)
+                        .links(newLinks)
+                        .linkDistance(200)
+                        .symmetricDiffLinkLengths(50)
+                        .avoidOverlaps(true)
+                        .handleDisconnected(true)
+                        .size([10800, 10800])
+                        .stop()
+                        ;
+                    simulation2.start(5000);
 
                     nodes.map(coordinate => {
                         // remap the axes - we've lost the z axis and if we display this as is we'll get a disc
