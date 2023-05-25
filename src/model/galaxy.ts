@@ -306,17 +306,16 @@ export class Galaxy {
                         return d;
                     });
 
-                    const simulation2 = cola.d3adaptor(d3)
+                    const simulation = cola.d3adaptor(d3)
                         .nodes(nodes)
                         .links(l)
                         .linkDistance(10)
-                        .symmetricDiffLinkLengths(5)
+                        .symmetricDiffLinkLengths(10)
                         .avoidOverlaps(true)
                         .handleDisconnected(true)
-                        .size([10, 10])
                         .stop()
                         ;
-                    simulation2.start(5000);
+                    simulation.start(5000);
 
                     const newSystems = nodes.map(node => {
                         return new SolarSystem(node);

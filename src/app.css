@@ -13,11 +13,3 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 }
-
-#app {
-  max-width: 100%;
-  max-height: 100%;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
