@@ -62,7 +62,6 @@ export class SVGView implements ViewLike {
             }
         ));
         const center = boundingBox.center;
-        console.dir(boundingBox);
         const translationVec = [(viewboxDimensions[0] / 2) - center[0], (viewboxDimensions[1] / 2) + center[1]]; // Because Y grows towards the 'down' direction
         const scaleExtent: [number, number] = [0.5, 8];
 
@@ -99,38 +98,39 @@ export class SVGView implements ViewLike {
             .attr("stroke-linejoin", "round")
             ;
 
-        G
-            .selectAll("circle")
-            .data(systemCoordinates)
-            .enter()
-            .append("circle")
-            .attr("cx", d => String(d.x))
-            .attr("cy", d => String(-d.y))
-            .attr("r", "1")
-            .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
-            .attr("system-name", d => d.systemName)
-            .style("fill", d => `rgb(${d.r},${d.g},${d.b})`)
-            .attr("stroke", "black")
-            .attr("stroke-width", 1)
-            ;
-
         // G
-        //     .selectAll("text")
+        //     .selectAll("circle")
         //     .data(systemCoordinates)
         //     .enter()
-        //     .append("text")
-        //     .attr("x", d => String(d.x))
-        //     .attr("y", d => String(-d.y + height * 0.0105))
+        //     .append("circle")
+        //     .attr("cx", d => String(d.x))
+        //     .attr("cy", d => String(-d.y))
+        //     .attr("r", "1")
         //     .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
-        //     .attr("dominant-baseline", "middle")
-        //     .attr("text-anchor", "middle")
-        //     .attr("fill", "white")
-        //     .attr("font-size", "0.5rem")
+        //     .attr("system-name", d => d.systemName)
+        //     .style("fill", d => `rgb(${d.r},${d.g},${d.b})`)
         //     .attr("stroke", "black")
-        //     .attr("stroke-width", "1px")
-        //     .attr("paint-order", "stroke")
-        //     .text(d => d.systemName)
+        //     .attr("stroke-width", 1)
         //     ;
+
+        G
+            .selectAll("text")
+            .data(systemCoordinates)
+            .enter()
+            .append("text")
+            .attr("x", d => String(d.x))
+            .attr("y", d => String(-d.y))
+            .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
+            .attr("dominant-baseline", "middle")
+            .attr("text-anchor", "middle")
+            .attr("fill", "white")
+            .attr("font-size", "3")
+            .attr("font-family", "monospace")
+            .attr("stroke", "black")
+            .attr("stroke-width", "0.5")
+            .attr("paint-order", "stroke")
+            .text(d => d.systemName)
+            ;
 
 
         const previousSVG =
@@ -146,19 +146,19 @@ export class SVGView implements ViewLike {
 
         // Bounding boxes don't exist before DOM interactions
         // So we must put this after they've happened
-        // G
-        //     .selectAll("text")
-        //     .each(function (data: any, index) {
-        //         const dimensions = (this as any).getBBox();
-        //         G.insert("rect", "text")
-        //             .attr("x", dimensions.x)
-        //             .attr("y", dimensions.y)
-        //             .attr("width", dimensions.width * 1.05)
-        //             .attr("height", dimensions.height * 1.05)
-        //             .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
-        //             .style("fill", () => `rgb(${data.r},${data.g},${data.b})`)
-        //     })
-        //     ;
+        G
+            .selectAll("text")
+            .each(function (data: any, index) {
+                const dimensions = (this as any).getBBox();
+                G.insert("rect", "text")
+                    .attr("x", dimensions.x)
+                    .attr("y", dimensions.y)
+                    .attr("width", dimensions.width * 1.05)
+                    .attr("height", dimensions.height * 1.05)
+                    .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
+                    .style("fill", () => `rgb(${data.r},${data.g},${data.b})`)
+            })
+            ;
     }
 
     private boundingBox = (coordinates: number[][]): {
@@ -185,30 +185,6 @@ export class SVGView implements ViewLike {
             corner2: [Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
             center: [0, 0, 0]
         });
-    }
-
-
-    private domain = (coordinates: number[][], asSubway: boolean): number[] => {
-        const xDomain = coordinates.reduce((acc, curr) => {
-            const x = curr[0];
-            let smallest = Math.min(x, acc[0]);
-            let largest = Math.max(x, acc[1]);
-            smallest = smallest < 0 ? Math.floor(smallest) : Math.ceil(smallest)
-            largest = largest < 0 ? Math.floor(largest) : Math.ceil(largest)
-            return [smallest, largest];
-        }, [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER]);
-
-        const yDomain = coordinates.reduce((acc, curr) => {
-            const y = asSubway ? curr[2] : curr[1];
-            let smallest = Math.min(y, acc[0]);
-            let largest = Math.max(y, acc[1]);
-            smallest = smallest < 0 ? Math.floor(smallest) : Math.ceil(smallest)
-            largest = largest < 0 ? Math.floor(largest) : Math.ceil(largest)
-            return [smallest, largest];
-        }, [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER]);
-
-        const retVal = [Math.min(xDomain[0], yDomain[0]), Math.max(xDomain[1], yDomain[1])]
-        return retVal;
     }
 
     private zoomed = (event) => {
