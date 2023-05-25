@@ -1,5 +1,5 @@
 import { Galaxy } from "./model/galaxy.js";
-import eveUniverse from './model/universe-pretty-1682199656932.json' assert {type: "json" };
+import eveUniverse from './model/universe_pretty_1685042923612.json' assert {type: "json" };
 import fs from "fs";
 
 const main = () => {
@@ -12,18 +12,14 @@ const main = () => {
 
     const galaxy = Galaxy.instance;
     galaxy.populateGalaxy(eveUniverse);
-    galaxy.getAllRegionNames().forEach(regionName => {
-        console.log(`Subwayifying ${regionName}`);
-        galaxy.regionalSubway(regionName);
-    });
-
+    galaxy.generateSubwayRepresentation();
     const regionSubways = galaxy.serializeSubway();
 
     fs.writeFileSync(
         `./src/model/region-subway-pretty-${Date.now()}.json`,
         JSON.stringify(regionSubways, null, 2),
     );
-    return 0;
+    process.exit(0);
 }
 
 main();

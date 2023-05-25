@@ -8,6 +8,7 @@ export interface ISolarSystem {
     x: number;
     y: number;
     z: number;
+    links: SystemName[];
 }
 
 export interface IConstellation {
@@ -20,12 +21,6 @@ export interface IRegion {
     constellations: IConstellation[];
 }
 
-export interface IJumps {
-    from: SystemName;
-    to: SystemName;
-}
-
 export interface IEvEUniverse {
     regions: IRegion[];
-    jumps: IJumps[];
 }

@@ -1,4 +1,4 @@
-import type * as interfaces from './interfaces';
+import type * as interfaces from './interfaces.js';
 import { ok, err, Result } from "neverthrow";
 import * as d3 from "d3";
 import * as cola from "webcola";
@@ -17,13 +17,13 @@ class SolarSystem implements interfaces.ISolarSystem {
     private readonly _z: number;
     private readonly _links: interfaces.SystemName[];
 
-    constructor(data: interfaces.ISolarSystem, links = []) {
+    constructor(data: interfaces.ISolarSystem) {
         this._systemName = data.systemName;
         this._security = data.security;
         this._x = data.x;
         this._y = data.y;
         this._z = data.z;
-        this._links = links;
+        this._links = data.links;
     }
 
     public get systemName() { return this._systemName; }
@@ -35,6 +35,17 @@ class SolarSystem implements interfaces.ISolarSystem {
 
     public addLink(systemName: interfaces.SystemName) {
         this._links.push(systemName);
+    }
+
+    public serialize(): interfaces.ISolarSystem {
+        return {
+            systemName: this._systemName,
+            security: this._security,
+            x: this._x,
+            y: this._y,
+            z: this._z,
+            links: this._links,
+        }
     }
 }
 
@@ -55,6 +66,31 @@ class Constellation implements interfaces.IConstellation {
 
     public get constellationName() { return this._constellationName; }
     public get systems() { return this._systems; }
+
+    public replaceSystem(replacement: SolarSystem): Result<string, string> {
+        let found = false;
+        console.log(`\t Attempting to replace system ${replacement.systemName} in constellation ${this._constellationName}`);
+        for (let i = 0; i < this._systems.length; i++) {
+            const system = this._systems[i];
+            if (system.systemName === replacement.systemName) {
+                found = true;
+                this._systems[i] = replacement;
+            }
+        }
+        if (found) {
+            return ok(`Successfully replaced ${replacement.systemName} in constellation ${this._constellationName}`)
+        }
+        else {
+            return err(`Unable to find ${replacement.systemName} in constellation ${this._constellationName}`);
+        }
+    }
+
+    public serialize(): interfaces.IConstellation {
+        return {
+            constellationName: this._constellationName,
+            systems: this._systems.map(system => system.serialize()),
+        }
+    }
 }
 
 class Region implements interfaces.IRegion {
@@ -74,6 +110,7 @@ class Region implements interfaces.IRegion {
 
     public get regionName() { return this._regionName };
     public get constellations() { return this._constellations };
+
     public get regionSystems(): SolarSystem[] {
         return this._constellations.flatMap(c => c.systems)
     };
@@ -88,6 +125,34 @@ class Region implements interfaces.IRegion {
         }
         else {
             return ok(system)
+        }
+    }
+
+    public replaceSystem(replacement: SolarSystem): Result<string, string> {
+        const results: Result<string, string>[] = [];
+        console.log(`Replacing system ${replacement.systemName} in region ${this._regionName}`);
+        for (let i = 0; i < this._constellations.length; i++) {
+            const constellation = this._constellations[i];
+            const result = constellation.replaceSystem(replacement);
+            result
+                .map(s => console.log(`\t ${s}`))
+                .mapErr(s => console.error(`\t ${s}`));
+            results.push(result);
+        }
+
+        for (let result of results) {
+            if (result.isOk()) {
+                return result;
+            }
+        }
+
+        return err(`System ${replacement.systemName} not found in any of the constellations of ${this._regionName}`);
+    }
+
+    public serialize(): interfaces.IRegion {
+        return {
+            regionName: this._regionName,
+            constellations: this._constellations.map(constellation => constellation.serialize())
         }
     }
 }
@@ -116,10 +181,6 @@ export class Galaxy {
                 systems[system.systemName] = system;
             }
         }
-
-        for (let j of sourceData.jumps) {
-            systems[j.from].addLink(j.to);
-        }
     }
 
     public populateGalaxyAsSubway(sourceData: interfaces.IEvEUniverse) {
@@ -131,10 +192,6 @@ export class Galaxy {
             for (let system of region.regionSystems) {
                 systems[system.systemName] = system;
             }
-        }
-
-        for (let j of sourceData.jumps) {
-            systems[j.from].addLink(j.to);
         }
     }
 
@@ -209,7 +266,7 @@ export class Galaxy {
                         }
                     }
                 }
-                return links
+                return links;
             });
     }
 
@@ -223,51 +280,68 @@ export class Galaxy {
         );
     }
 
-    public regionalSubway = (regionName: interfaces.RegionName): Result<string, string> => {
-        const region = this._standardRegions[regionName];
-        if (region === undefined) {
-            return err(`Unable to find region ${regionName}`);
-        }
-        const systems = Object.keys(region.regionSystems)
-            .map(systemName => region.regionSystems[systemName]);
-        const links = this.getConnectionsAs(
-            regionName,
-            (source, target, sourceIndex, targetIndex) => {
-                return { source: sourceIndex, target: targetIndex, s: source.systemName, t: target.systemName }
-            }
-        );
+    public generateSubwayRepresentation = () => {
+        const regions = this._standardRegions;
+        Object.keys(regions)
+            .map(regionName => regions[regionName])
+            .map(region => {
+                const systems = region.regionSystems;
+                const links = this.getConnectionsAs(
+                    region.regionName,
+                    (source, target, sourceIndex, targetIndex) => {
+                        return { source: sourceIndex, target: targetIndex, s: source.systemName, t: target.systemName };
+                    }
+                );
 
-        links.map(l => {
-            const nodes = systems.map(system => {
-                const d = {
-                    systemName: system.systemName,
-                    security: system.security,
-                    x: system.x,
-                    y: system.y,
-                    z: 0,
-                    links: system.links
-                }
-                return d;
+                links.map(l => {
+                    const nodes = systems.map(system => {
+                        const d = {
+                            systemName: system.systemName,
+                            security: system.security,
+                            x: system.x,
+                            y: system.y,
+                            z: 0,
+                            links: system.links
+                        }
+                        return d;
+                    });
+
+                    const simulation2 = cola.d3adaptor(d3)
+                        .nodes(nodes)
+                        .links(l)
+                        .linkDistance(10)
+                        .symmetricDiffLinkLengths(5)
+                        .avoidOverlaps(true)
+                        .handleDisconnected(true)
+                        .size([10, 10])
+                        .stop()
+                        ;
+                    simulation2.start(5000);
+
+                    const newSystems = nodes.map(node => {
+                        return new SolarSystem(node);
+                    });
+
+                    console.log(`Copying region ${region.regionName}`);
+                    const newRegion = new Region(region);
+                    newSystems.forEach(system => {
+                        newRegion.replaceSystem(system)
+                            .map(console.log)
+                            .mapErr(console.error)
+                            ;
+                    });
+                    this._subwayRegions[newRegion.regionName] = newRegion;
+                })
+                    .mapErr(e => console.error(`Error trying to get links during subwayification: ${e}`));
             });
+    }
 
-            const simulation2 = cola.d3adaptor(d3)
-                .nodes(nodes)
-                .links(l)
-                .linkDistance(10)
-                .symmetricDiffLinkLengths(5)
-                .avoidOverlaps(true)
-                .handleDisconnected(true)
-                .size([10, 10])
-                .stop()
-                ;
-            simulation2.start(5000);
-
-            const newSystems = nodes.map(node => {
-                const { links, ...data } = node;
-                return new SolarSystem(data, links);
-            });
-        });
-
-        return ok("ok");
+    public serializeSubway() {
+        return Object.keys(this._subwayRegions)
+            .map(regionName => this._subwayRegions[regionName])
+            .reduce((acc, region) => {
+                acc.regions.push(region.serialize());
+                return acc;
+            }, { regions: [] })
     }
 }

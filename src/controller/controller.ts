@@ -23,10 +23,6 @@ export class Controller {
     }
 
     public displayRegion = (regionName: string, asSubway: boolean): void => {
-        this._model.regionalSubway(regionName)
-            .map(console.log)
-            .mapErr(console.log);
-
         const systemDataResult = this._model.getRegionCoordinatesandStatuses(regionName, asSubway);
         const connectionsResult = this._model.getConnections(regionName, asSubway);
         Result.combine([systemDataResult, connectionsResult])

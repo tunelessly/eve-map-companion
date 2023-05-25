@@ -103,7 +103,8 @@ export class SVGView implements ViewLike {
         // Painter's algorithm
         const G = svg.append("svg:g");
         G
-            .attr("viewbox", [0, 0, width, height])
+            .attr("viewbox", [-50, -50, 100, 100])
+            .attr("preserveAspectRatio", "xMidYMid meet")
             .selectAll("line")
             .data(scaledConnections)
             .enter()

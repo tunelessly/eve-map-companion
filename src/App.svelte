@@ -6,8 +6,8 @@
   import { SVGView } from "./view/SVG/SVGView";
   import { Galaxy } from "./model/galaxy";
   import { onMount } from "svelte";
-  import eveUniverse from "./model/universe_pretty_1684868664169.json";
-  import eveSubway from "./model/region-subway-pretty-1684786151391.json";
+  import eveUniverse from "./model/universe_pretty_1685042923612.json";
+  import eveSubway from "./model/region-subway-pretty-1685043198762.json";
 
   let rootHTMLElement: HTMLElement;
   let selectedRegion: string = "-";
@@ -66,7 +66,7 @@
 
   onMount(() => {
     Galaxy.instance.populateGalaxy(eveUniverse);
-    // Galaxy.instance.populateGalaxySubway(eveSubway);
+    Galaxy.instance.populateGalaxyAsSubway(eveSubway);
     if (window.location.search.length > 0) {
       const model = Galaxy.instance;
       const params = fromURLSearch(window.location.search);
