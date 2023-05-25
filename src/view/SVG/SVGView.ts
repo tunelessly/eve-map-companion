@@ -67,7 +67,7 @@ export class SVGView implements ViewLike {
 
         const zoom = d3.zoom()
             .scaleExtent(scaleExtent)
-            .translateExtent([[-width / 4, -height / 4], [width / 4, height / 4]])
+            .translateExtent([[-width / 3, -height / 3], [width / 3, height / 3]])
             .on("zoom", this.zoomed);
 
         const svg = d3.create("svg")
@@ -98,21 +98,6 @@ export class SVGView implements ViewLike {
             .attr("stroke-linejoin", "round")
             ;
 
-        // G
-        //     .selectAll("circle")
-        //     .data(systemCoordinates)
-        //     .enter()
-        //     .append("circle")
-        //     .attr("cx", d => String(d.x))
-        //     .attr("cy", d => String(-d.y))
-        //     .attr("r", "1")
-        //     .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
-        //     .attr("system-name", d => d.systemName)
-        //     .style("fill", d => `rgb(${d.r},${d.g},${d.b})`)
-        //     .attr("stroke", "black")
-        //     .attr("stroke-width", 1)
-        //     ;
-
         G
             .selectAll("text")
             .data(systemCoordinates)
@@ -140,9 +125,6 @@ export class SVGView implements ViewLike {
         } else {
             this.rootHTMLElement.replaceChild(svg.node(), previousSVG);
         }
-        this._SVG = svg;
-        this._G = G;
-        this._translationVec = translationVec;
 
         // Bounding boxes don't exist before DOM interactions
         // So we must put this after they've happened
@@ -159,6 +141,10 @@ export class SVGView implements ViewLike {
                     .style("fill", () => `rgb(${data.r},${data.g},${data.b})`)
             })
             ;
+
+        this._SVG = svg;
+        this._G = G;
+        this._translationVec = translationVec;
     }
 
     private boundingBox = (coordinates: number[][]): {

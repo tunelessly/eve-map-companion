@@ -19,7 +19,7 @@ class SolarSystem implements interfaces.ISolarSystem {
 
     constructor(data: interfaces.ISolarSystem) {
         this._systemName = data.systemName;
-        this._security = data.security;
+        this._security = parseFloat(Number(data.security).toPrecision(1));
         this._x = data.x;
         this._y = data.y;
         this._z = data.z;
@@ -114,6 +114,16 @@ class Region implements interfaces.IRegion {
     public get regionSystems(): SolarSystem[] {
         return this._constellations.flatMap(c => c.systems)
     };
+
+    public findSystemConstellation(systemName: interfaces.SystemName): Result<Constellation, string> {
+        for (let constellation of this.constellations) {
+            const result = constellation.systems.find(s => s.systemName === systemName);
+            if (result !== undefined) {
+                return ok(constellation);
+            }
+        }
+        return err(`System ${systemName} not found in any of ${this._regionName}'s constellations.`);
+    }
 
     public findSystem(systemName: interfaces.SystemName): Result<SolarSystem, string> {
         const system = this._constellations
@@ -230,6 +240,10 @@ export class Galaxy {
             });
     }
 
+    // The complication is due to the fact that _all_ stargate connections are bidirectional
+    // but the data doesn't assume that that'ss the case.
+    // So in order to avoid drawing two edges that are exactly the same on top of one another 
+    // we remove them here.
     private getConnectionsAs<T>
         (
             regionName: interfaces.RegionName,
@@ -306,9 +320,32 @@ export class Galaxy {
                         return d;
                     });
 
+                    const groups = [];
+
+                    for (let i = 0; i < nodes.length; i++) {
+                        const system = nodes[i];
+                        const result = region.findSystemConstellation(system.systemName);
+                        result
+                            .map(c => {
+                                const index = groups.findIndex(r => r.constellationName === c.constellationName);
+                                let group;
+                                if (index == -1) {
+                                    group = { leaves: [], constellationName: c.constellationName }
+                                    groups.push(group);
+                                }
+                                else {
+                                    group = groups[index];
+                                }
+                                group.leaves.push(i);
+                            })
+                            .mapErr(console.error);
+                    }
+
+
                     const simulation = cola.d3adaptor(d3)
                         .nodes(nodes)
                         .links(l)
+                        .groups(groups)
                         .linkDistance(10)
                         .symmetricDiffLinkLengths(10)
                         .avoidOverlaps(true)

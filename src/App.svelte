@@ -7,7 +7,7 @@
   import { Galaxy } from "./model/galaxy";
   import { onMount } from "svelte";
   import eveUniverse from "./model/universe_pretty_1685042923612.json";
-  import eveSubway from "./model/region-subway-pretty-1685043198762.json";
+  import eveSubway from "./model/region-subway-pretty-1685057970581.json";
 
   let rootHTMLElement: HTMLElement;
   let selectedRegion: string = "-";
