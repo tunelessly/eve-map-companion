@@ -34,6 +34,7 @@ export class SVGView implements ViewLike {
     public update(
         systemData: [string, coordinates3D, number][],
         connections: [coordinates3D, coordinates3D][],
+        transform?: string
     ) {
         this._systemData = systemData;
         this._connections = connections;
@@ -74,15 +75,29 @@ export class SVGView implements ViewLike {
         ));
         console.dir(boundingBox);
         const center = boundingBox.center;
-        const translationVec = [(viewboxDimensions[0] / 2) - center[0], (viewboxDimensions[1] / 2) - center[1]]; // Because Y grows towards the 'down' direction
+        const translationVec = [(viewboxDimensions[0] / 2) - center[0], (viewboxDimensions[1] / 2) - center[1]];
         const scaleExtent: [number, number] = [0.5, 8];
+
+        const svg = d3.create("svg");
+        const G = svg.append("svg:g");
+
+        this._SVG = svg;
+        this._G = G;
+        this._translationVec = translationVec;
+
+        let transformParams = { translate: [center[0], center[1]], scale: 1 };
+
+        if (transform !== undefined) {
+            transformParams = this.transformParser(transform);
+        }
 
         const zoom = d3.zoom()
             .scaleExtent(scaleExtent)
             .translateExtent([[boundingBox.corner1[0] * 1.10, boundingBox.corner1[1] * 1.10], [boundingBox.corner2[0] * 1.10, boundingBox.corner2[1] * 1.10]])
-            .on("zoom", this.zoomed);
+            .on("zoom", this.zoomed)
+            .on("end", this.zoomEnd);
 
-        const svg = d3.create("svg")
+        svg
             .attr("xmlns", "http://www.w3.org/2000/svg")
             .attr("id", "SVGSubway")
             .attr("width", width)
@@ -90,12 +105,11 @@ export class SVGView implements ViewLike {
             .attr("viewBox", [center[0], center[1], ...viewboxDimensions])
             .attr("preserveAspectRatio", "xMidYMid meet")
             .call(zoom)
+            .call(zoom.transform, d3.zoomIdentity.translate(transformParams.translate[0], transformParams.translate[1]).scale(transformParams.scale))
             ;
 
         // Painter's algorithm
-        const G = svg.append("svg:g");
         G
-            .attr("scale", "(1,-1)")
             .selectAll("line")
             .data(connectionCoordinates)
             .enter()
@@ -109,6 +123,11 @@ export class SVGView implements ViewLike {
             .attr("stroke-width", "0.3")
             .attr("stroke-linejoin", "round")
             ;
+
+        if (transform !== undefined) {
+            console.dir(this.transformParser(transform));
+            G.attr("transform", transform);
+        }
 
         G
             .selectAll("text")
@@ -151,10 +170,6 @@ export class SVGView implements ViewLike {
                     .style("fill", () => `rgb(${data.r},${data.g},${data.b})`)
             })
             ;
-
-        this._SVG = svg;
-        this._G = G;
-        this._translationVec = translationVec;
     }
 
     private YFlipper = (coordinates: coordinates3D): coordinates3D => {
@@ -194,6 +209,36 @@ export class SVGView implements ViewLike {
     private zoomed = (event) => {
         const { transform } = event;
         this.G.attr("transform", transform);
+    }
+
+    private zoomEnd = (event) => {
+        const { transform } = event;
+        const currentURL = new URL(window.location.toString());
+        currentURL.searchParams.set("transform", transform.toString());
+        history.replaceState({}, '', currentURL.toString());
+    }
+
+    private transformParser = (transform: string) => {
+        let translate = [0, 0];
+        let scale = 1;
+        const split = transform.split(" ");
+        const regExp = /[^\d|\.]/g;
+
+        const translateStr = split[0].replaceAll(regExp, ' ').trim().split(' ');
+        const scaleStr = split[1].replaceAll(regExp, ' ').trim();
+
+        const translateX = parseFloat(translateStr[0]);
+        const translateY = parseFloat(translateStr[1]);
+        const scaleX = parseFloat(scaleStr);
+
+        translate[0] = translateX;
+        translate[1] = translateY;
+        scale = scaleX;
+
+        return {
+            translate: translate,
+            scale: scale,
+        }
     }
 
     public onWindowResize() {

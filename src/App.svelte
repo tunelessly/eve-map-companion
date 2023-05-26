@@ -45,10 +45,12 @@
     view: ViewLike;
     region: string;
     asSubway: boolean;
+    transform: string;
   } => {
     const params = new URLSearchParams(qs);
     const region = params.get("region");
     const asSubway = params.get("subway") === "true";
+    const transform = params.get("transform");
     let view: ViewLike;
     if (
       region !== undefined &&
@@ -61,7 +63,7 @@
     } else {
       view = new webGLView(rootHTMLElement);
     }
-    return { view, region, asSubway };
+    return { view, region, asSubway, transform };
   };
 
   onMount(() => {
@@ -76,7 +78,11 @@
       if (params.region === Galaxy.instance.name) {
         controller.displayGalaxy();
       } else {
-        controller.displayRegion(params.region, params.asSubway);
+        controller.displayRegion(
+          params.region,
+          params.asSubway,
+          params.transform
+        );
       }
     } else {
       const model = Galaxy.instance;

@@ -22,7 +22,7 @@ export class Controller {
         this._view.update(systemData, []);
     }
 
-    public displayRegion = (regionName: string, asSubway: boolean): void => {
+    public displayRegion = (regionName: string, asSubway: boolean, transform?: string): void => {
         const systemDataResult = this._model.getRegionCoordinatesandStatuses(regionName, asSubway);
         const connectionsResult = this._model.getConnections(regionName, asSubway);
         Result.combine([systemDataResult, connectionsResult])
@@ -32,9 +32,10 @@ export class Controller {
                 const urlSearchParams = new URLSearchParams();
                 urlSearchParams.set("region", regionName);
                 urlSearchParams.set("subway", String(asSubway));
+                urlSearchParams.set("transform", transform);
                 history.replaceState({}, '', `${window.location.pathname}?${urlSearchParams}`)
                 this._view.dispose();
-                this._view.update(systemData, connections);
+                this._view.update(systemData, connections, transform);
             })
             .mapErr(console.log);
     }
