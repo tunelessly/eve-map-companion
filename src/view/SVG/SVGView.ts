@@ -42,18 +42,29 @@ export class SVGView implements ViewLike {
         const width = rect.width;
         const height = rect.height;
         const viewboxDimensions = [100, 100];
-        const systemCoordinates = systemData.map(x => {
-            return {
-                systemName: x[0],
-                ...x[1],
-                ...HSV2RGB(sectoHSV(x[2])),
-            };
-        });
-        const connectionCoordinates = connections.map(c => {
-            const start = c[0];
-            const end = c[1];
-            return [[start.x, start.y, start.z], [end.x, end.y, end.z]];
-        });
+        const systemCoordinates = systemData
+            .map(x => {
+                x[1] = this.YFlipper(x[1]);
+                return x;
+            })
+            .map(x => {
+                return {
+                    systemName: x[0],
+                    ...x[1],
+                    ...HSV2RGB(sectoHSV(x[2])),
+                };
+            });
+        const connectionCoordinates = connections
+            .map(c => {
+                c[0] = this.YFlipper(c[0]);
+                c[1] = this.YFlipper(c[1]);
+                return c;
+            })
+            .map(c => {
+                const start = c[0];
+                const end = c[1];
+                return [[start.x, start.y, start.z], [end.x, end.y, end.z]];
+            });
 
 
         const boundingBox = this.boundingBox(systemCoordinates.map(
@@ -61,13 +72,14 @@ export class SVGView implements ViewLike {
                 return [s.x, s.y, s.z];
             }
         ));
+        console.dir(boundingBox);
         const center = boundingBox.center;
-        const translationVec = [(viewboxDimensions[0] / 2) - center[0], (viewboxDimensions[1] / 2) + center[1]]; // Because Y grows towards the 'down' direction
+        const translationVec = [(viewboxDimensions[0] / 2) - center[0], (viewboxDimensions[1] / 2) - center[1]]; // Because Y grows towards the 'down' direction
         const scaleExtent: [number, number] = [0.5, 8];
 
         const zoom = d3.zoom()
             .scaleExtent(scaleExtent)
-            .translateExtent([[-width / 3, -height / 3], [width / 3, height / 3]])
+            .translateExtent([[boundingBox.corner1[0] * 1.10, boundingBox.corner1[1] * 1.10], [boundingBox.corner2[0] * 1.10, boundingBox.corner2[1] * 1.10]])
             .on("zoom", this.zoomed);
 
         const svg = d3.create("svg")
@@ -83,15 +95,15 @@ export class SVGView implements ViewLike {
         // Painter's algorithm
         const G = svg.append("svg:g");
         G
+            .attr("scale", "(1,-1)")
             .selectAll("line")
             .data(connectionCoordinates)
             .enter()
             .append("line")
             .attr("x1", d => String(d[0][0]))
-            .attr("y1", d => String(-d[0][1]))
+            .attr("y1", d => String(d[0][1]))
             .attr("x2", d => String(d[1][0]))
-            .attr("y2", d => String(-d[1][1]))
-            .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
+            .attr("y2", d => String(d[1][1]))
             .attr("fill", "none")
             .attr("stroke", "white")
             .attr("stroke-width", "0.3")
@@ -104,8 +116,7 @@ export class SVGView implements ViewLike {
             .enter()
             .append("text")
             .attr("x", d => String(d.x))
-            .attr("y", d => String(-d.y))
-            .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
+            .attr("y", d => String(d.y))
             .attr("dominant-baseline", "middle")
             .attr("text-anchor", "middle")
             .attr("fill", "white")
@@ -137,7 +148,6 @@ export class SVGView implements ViewLike {
                     .attr("y", dimensions.y)
                     .attr("width", dimensions.width * 1.05)
                     .attr("height", dimensions.height * 1.05)
-                    .attr("transform", `translate(${translationVec[0]} ${translationVec[1]})`)
                     .style("fill", () => `rgb(${data.r},${data.g},${data.b})`)
             })
             ;
@@ -145,6 +155,14 @@ export class SVGView implements ViewLike {
         this._SVG = svg;
         this._G = G;
         this._translationVec = translationVec;
+    }
+
+    private YFlipper = (coordinates: coordinates3D): coordinates3D => {
+        return {
+            x: coordinates.x,
+            y: -coordinates.y,
+            z: coordinates.z,
+        }
     }
 
     private boundingBox = (coordinates: number[][]): {

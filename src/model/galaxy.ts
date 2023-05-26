@@ -241,7 +241,7 @@ export class Galaxy {
     }
 
     // The complication is due to the fact that _all_ stargate connections are bidirectional
-    // but the data doesn't assume that that'ss the case.
+    // but the data doesn't assume that that's the case.
     // So in order to avoid drawing two edges that are exactly the same on top of one another 
     // we remove them here.
     private getConnectionsAs<T>
