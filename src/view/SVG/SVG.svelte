@@ -1,0 +1,33 @@
+<script lang="ts">
+    import { onMount } from "svelte";
+    import type { coordinates3D } from "../../model/galaxy.js";
+    import { SVGView } from "./SVGView.js";
+
+    let element: HTMLElement;
+    let svgView: SVGView;
+    export let systemData: [string, coordinates3D, number][];
+    export let connectionData: [coordinates3D, coordinates3D][];
+    export let transform: string = "";
+
+    const onChange = (systemData, connectionData) => {
+        console.log("SVG updated");
+        if (svgView === undefined) return;
+        svgView.update(systemData, connectionData, transform);
+    };
+
+    onMount(() => {
+        svgView = new SVGView(element);
+    });
+
+    $: onChange(systemData, connectionData);
+</script>
+
+<div bind:this={element} />
+
+<style>
+    div {
+        width: 100%;
+        height: 100%;
+        text-align: center;
+    }
+</style>

@@ -112,7 +112,7 @@ class Region implements interfaces.IRegion {
     public get constellations() { return this._constellations };
 
     public get regionSystems(): SolarSystem[] {
-        return this._constellations.flatMap(c => c.systems)
+        return this._constellations.flatMap(c => c.systems);
     };
 
     public findSystemConstellation(systemName: interfaces.SystemName): Result<Constellation, string> {

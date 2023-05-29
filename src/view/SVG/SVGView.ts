@@ -73,7 +73,6 @@ export class SVGView implements ViewLike {
                 return [s.x, s.y, s.z];
             }
         ));
-        console.dir(boundingBox);
         const center = boundingBox.center;
         const translationVec = [(viewboxDimensions[0] / 2) - center[0], (viewboxDimensions[1] / 2) - center[1]];
         const scaleExtent: [number, number] = [0.5, 8];
@@ -85,11 +84,8 @@ export class SVGView implements ViewLike {
         this._G = G;
         this._translationVec = translationVec;
 
-        let transformParams = { translate: [center[0], center[1]], scale: 1 };
+        let transformParams = this.transformParser(transform) || { translate: [center[0], center[1]], scale: 1 };
 
-        if (transform !== undefined) {
-            transformParams = this.transformParser(transform);
-        }
 
         const zoom = d3.zoom()
             .scaleExtent(scaleExtent)
@@ -125,7 +121,6 @@ export class SVGView implements ViewLike {
             ;
 
         if (transform !== undefined) {
-            console.dir(this.transformParser(transform));
             G.attr("transform", transform);
         }
 
@@ -141,9 +136,6 @@ export class SVGView implements ViewLike {
             .attr("fill", "white")
             .attr("font-size", "3")
             .attr("font-family", "monospace")
-            .attr("stroke", "black")
-            .attr("stroke-width", "0.5")
-            .attr("paint-order", "stroke")
             .text(d => d.systemName)
             ;
 
@@ -218,7 +210,8 @@ export class SVGView implements ViewLike {
         history.replaceState({}, '', currentURL.toString());
     }
 
-    private transformParser = (transform: string) => {
+    private transformParser = (transform: string): { translate: number[], scale: number } => {
+        if (transform.length == 0) return undefined;
         let translate = [0, 0];
         let scale = 1;
         const split = transform.split(" ");
