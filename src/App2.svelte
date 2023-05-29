@@ -12,11 +12,11 @@
     let connectionsResult;
     let systemData;
     let connectionData;
-    let transform = "";
+    let args = "";
     $: selectedRegion;
     $: systemData;
     $: connectionData;
-    $: transform;
+    $: args;
 
     const update = (regionName: string) => {
         const currentURL = new URL(window.location.toString());
@@ -34,19 +34,19 @@
                 connectionData = data[1];
             })
             .mapErr(console.log);
-        transform = "";
+        args = "";
     };
 
     const fromURLSearch = (
         qs: string
     ): {
         region: string;
-        transform: string;
+        args: string;
     } => {
         const params = new URLSearchParams(qs);
         const region = params.get("region") || regionNames[0];
-        const transform = params.get("transform") || "";
-        return { region, transform };
+        const args = params.get("args") || "";
+        return { region, args };
     };
 
     onMount(() => {
@@ -55,7 +55,7 @@
         regionNames = Galaxy.instance.getAllRegionNames();
         const params = fromURLSearch(window.location.search);
         update(params.region);
-        transform = params.transform;
+        args = params.args;
     });
 </script>
 
@@ -68,7 +68,7 @@
             <option value={name}>{name}</option>
         {/each}
     </select>
-    <SVGView {systemData} {connectionData} {transform} />
+    <SVGView {systemData} {connectionData} transform={args} />
 </div>
 
 <style>

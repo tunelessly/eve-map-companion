@@ -121,7 +121,7 @@ export class SVGView implements ViewLike {
             ;
 
         if (transform !== undefined) {
-            G.attr("transform", transform);
+            G.attr("transform", d3.zoomIdentity.translate(transformParams.translate[0], transformParams.translate[1]).scale(transformParams.scale).toString());
         }
 
         G
@@ -205,32 +205,22 @@ export class SVGView implements ViewLike {
 
     private zoomEnd = (event) => {
         const { transform } = event;
+        const serialized = btoa(JSON.stringify(transform));
         const currentURL = new URL(window.location.toString());
-        currentURL.searchParams.set("transform", transform.toString());
+        currentURL.searchParams.set("args", serialized);
         history.replaceState({}, '', currentURL.toString());
     }
 
     private transformParser = (transform: string): { translate: number[], scale: number } => {
-        if (transform.length == 0) return undefined;
-        let translate = [0, 0];
-        let scale = 1;
-        const split = transform.split(" ");
-        const regExp = /[^\d|\.]/g;
-
-        const translateStr = split[0].replaceAll(regExp, ' ').trim().split(' ');
-        const scaleStr = split[1].replaceAll(regExp, ' ').trim();
-
-        const translateX = parseFloat(translateStr[0]);
-        const translateY = parseFloat(translateStr[1]);
-        const scaleX = parseFloat(scaleStr);
-
-        translate[0] = translateX;
-        translate[1] = translateY;
-        scale = scaleX;
-
-        return {
-            translate: translate,
-            scale: scale,
+        try {
+            const decoded = JSON.parse(atob(transform));
+            return {
+                translate: [decoded.x, decoded.y],
+                scale: decoded.k
+            };
+        }
+        catch {
+            return undefined;
         }
     }
 
