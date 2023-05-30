@@ -185,10 +185,6 @@ export class SVGView implements ViewLike {
         const translateY = (-parseFloat(selection.attr("y")) + (viewboxDimensions[1] / 2) / newScale + boundingBox.center[1] / newScale) * newScale;
         const newZoom = d3.zoomIdentity.translate(translateX, translateY).scale(newScale);
 
-        console.log("Closest match:", closestMatch);
-        console.log("Coordinates:", selection.attr("x"), selection.attr("y"));
-        console.log("Coordinates after:", translateX, translateY);
-        console.dir("Bounding box", boundingBox);
         svg.call(zoom.transform, newZoom);
 
     }
@@ -234,7 +230,6 @@ export class SVGView implements ViewLike {
 
     private zoomEnd = (event) => {
         const { transform } = event;
-        console.dir("Transform", transform);
         const serialized = btoa(JSON.stringify(transform));
         const currentURL = new URL(window.location.toString());
         currentURL.searchParams.set("args", serialized);
