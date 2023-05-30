@@ -172,7 +172,7 @@ export class SVGView implements ViewLike {
         const zoom = this.zoom;
         const boundingBox = this.boundingBox;
         const matches = this.names.map(name => {
-            const d: number = jaroWinkler(name, searchStr, { caseSensitive: false });
+            const d: number = jaroWinkler(name.toLowerCase(), searchStr.toLowerCase());
             return { name, distance: d };
         }).sort((x, y) => y.distance - x.distance);
         const closestMatch = matches[0];
