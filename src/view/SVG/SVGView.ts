@@ -171,7 +171,20 @@ export class SVGView implements ViewLike {
         const svg = this.SVG;
         const zoom = this.zoom;
         const boundingBox = this.boundingBox;
-        const closestMatch = closest(text, this.names);
+
+        const strFingerprinter = x => [...new Set(x.toLowerCase())].sort().join('');
+        const textFingerprint = strFingerprinter(text);
+        const systemNamesFingerprints = this.names.map(x => strFingerprinter(x));
+        const closestMatchFingerprint = closest(textFingerprint, systemNamesFingerprints);
+        const closestMatch = this.names.find(name => strFingerprinter(name) === closestMatchFingerprint);
+        console.log(
+            "Center on node - given name:", text,
+            "fingerprint:", textFingerprint,
+            "closest match fingerprint:", closestMatchFingerprint,
+            "closest match:", closestMatch
+        );
+
+
         const selection = d3.select(`#system-${closestMatch}`);
         const viewboxDimensions = this.viewboxDimensions;
         const newScale = 2;
