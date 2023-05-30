@@ -1,7 +1,7 @@
 import type { ViewLike } from "../viewlike";
 import type { coordinates3D } from "../../model/galaxy.js";
 import { HSV2RGB, sectoHSV } from "../utils/utils";
-import * as distance from "jaro-winkler";
+import { jaroWinkler } from "jaro-winkler-typescript";
 import * as d3 from "d3";
 
 export class SVGView implements ViewLike {
@@ -172,7 +172,7 @@ export class SVGView implements ViewLike {
         const zoom = this.zoom;
         const boundingBox = this.boundingBox;
         const matches = this.names.map(name => {
-            const d: number = distance(name, searchStr, { caseSensitive: false });
+            const d: number = jaroWinkler(name, searchStr, { caseSensitive: false });
             return { name, distance: d };
         }).sort((x, y) => y.distance - x.distance);
         const closestMatch = matches[0];
@@ -190,7 +190,6 @@ export class SVGView implements ViewLike {
         const newZoom = d3.zoomIdentity.translate(translateX, translateY).scale(newScale);
 
         svg.call(zoom.transform, newZoom);
-
     }
 
     private YFlipper = (coordinates: coordinates3D): coordinates3D => {

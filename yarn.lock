@@ -2020,10 +2020,10 @@ isexe@^2.0.0:
   resolved "https://registry.yarnpkg.com/isexe/-/isexe-2.0.0.tgz#e8fbf374dc556ff8947a10dcb0572d633f2cfa10"
   integrity sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==
 
-jaro-winkler@^0.2.8:
-  version "0.2.8"
-  resolved "https://registry.yarnpkg.com/jaro-winkler/-/jaro-winkler-0.2.8.tgz#6727e0d0b7091e2436f9356de9bf88fad23e534a"
-  integrity sha512-yr+mElb6dWxA1mzFu0+26njV5DWAQRNTi5pB6fFMm79zHrfAs3d0qjhe/IpZI4AHIUJkzvu5QXQRWOw2O0GQyw==
+jaro-winkler-typescript@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/jaro-winkler-typescript/-/jaro-winkler-typescript-1.0.1.tgz#d976d269eef10675c58ce28d304d40f642ef93ed"
+  integrity sha512-MsXieUkvK2Lv5CCVu42ddaE2tALmerhEY46DQb1ry0AEl/Au6HFi7zFemIKlbc3md93NDijfOj0AFuSfUJST3g==
 
 js-sdsl@^4.1.4:
   version "4.4.0"
