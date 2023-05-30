@@ -1,6 +1,6 @@
 import type { ViewLike } from "../viewlike";
 import type { coordinates3D } from "../../model/galaxy.js";
-import { RGBtofloat, HSV2RGB, sectoHSV } from "../utils/utils";
+import { HSV2RGB, sectoHSV } from "../utils/utils";
 import * as d3 from "d3";
 
 export class SVGView implements ViewLike {
@@ -96,9 +96,7 @@ export class SVGView implements ViewLike {
         svg
             .attr("xmlns", "http://www.w3.org/2000/svg")
             .attr("id", "SVGSubway")
-            .attr("width", width)
-            .attr("height", height)
-            .attr("viewBox", [center[0], center[1], ...viewboxDimensions])
+            .attr("viewBox", [Math.round(center[0]), Math.round(center[1]), ...viewboxDimensions])
             .attr("preserveAspectRatio", "xMidYMid meet")
             .call(zoom)
             .call(zoom.transform, d3.zoomIdentity.translate(transformParams.translate[0], transformParams.translate[1]).scale(transformParams.scale))
@@ -131,11 +129,8 @@ export class SVGView implements ViewLike {
             .append("text")
             .attr("x", d => String(d.x))
             .attr("y", d => String(d.y))
+            .attr("class", "svg-text")
             .attr("dominant-baseline", "middle")
-            .attr("text-anchor", "middle")
-            .attr("fill", "white")
-            .attr("font-size", "3")
-            .attr("font-family", "monospace")
             .text(d => d.systemName)
             ;
 

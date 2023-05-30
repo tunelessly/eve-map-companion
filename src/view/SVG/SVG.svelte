@@ -10,7 +10,6 @@
     export let transform: string = "";
 
     const onChange = (systemData, connectionData) => {
-        console.log("SVG updated");
         if (svgView === undefined) return;
         svgView.update(systemData, connectionData, transform);
     };
@@ -29,5 +28,16 @@
         width: 100%;
         height: 100%;
         text-align: center;
+    }
+
+    div :global(#SVGSubway) {
+        width: 100%;
+        height: 100%;
+    }
+
+    div :global(.svg-text) {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        text-anchor: middle;
+        font-size: 2pt;
     }
 </style>
