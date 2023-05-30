@@ -3,7 +3,7 @@
     import { Galaxy } from "./model/galaxy";
     import { Result } from "neverthrow";
     import SVGView from "./view/SVG/SVG.svelte";
-    import Search from "./components/search.svelte";
+    import Search from "./components/Search.svelte";
     import eveUniverse from "./model/universe_pretty_1685042923612.json";
     import eveSubway from "./model/region-subway-pretty-1685057970581.json";
 

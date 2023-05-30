@@ -1,3 +1,7 @@
-import { writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
 
-export const systemSearchPubSub = writable();
+type search = {
+    systemName: string;
+}
+
+export const systemNameSearchPubSub: Writable<search> = writable();

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { systemSearchPubSub } from "../../utils/svelte-store";
+    import { systemNameSearchPubSub } from "../../utils/svelte-store";
     import { onMount } from "svelte";
     import type { coordinates3D } from "../../model/galaxy.js";
     import { SVGView } from "./SVGView.js";
@@ -10,9 +10,10 @@
     export let connectionData: [coordinates3D, coordinates3D][];
     export let transform: string = "";
 
-    systemSearchPubSub.subscribe((name: string) => {
+    systemNameSearchPubSub.subscribe((systemSearch) => {
+        console.log("SVG svelte", "fui chamado chefe");
         if (svgView === undefined) return;
-        svgView.centerOnNode(name);
+        svgView.centerOnNode(systemSearch.systemName);
     });
 
     const onChange = (systemData, connectionData) => {

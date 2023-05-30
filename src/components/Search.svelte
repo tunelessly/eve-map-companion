@@ -1,11 +1,12 @@
 <script lang="ts">
-    import { systemSearchPubSub } from "../utils/svelte-store";
+    import { systemNameSearchPubSub } from "../utils/svelte-store";
     let input: HTMLInputElement;
     let button: HTMLButtonElement;
     let systemName: string = "";
 
     const onChange = (name: string) => {
-        systemSearchPubSub.set(name);
+        console.log("Search", "Mudei chefe");
+        systemNameSearchPubSub.set({ systemName: name });
         input.value = "";
     };
 
