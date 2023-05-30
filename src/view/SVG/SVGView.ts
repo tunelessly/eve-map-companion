@@ -108,14 +108,11 @@ export class SVGView implements ViewLike {
             .data(connectionCoordinates)
             .enter()
             .append("line")
+            .attr("class", "svg-line")
             .attr("x1", d => String(d[0][0]))
             .attr("y1", d => String(d[0][1]))
             .attr("x2", d => String(d[1][0]))
             .attr("y2", d => String(d[1][1]))
-            .attr("fill", "none")
-            .attr("stroke", "white")
-            .attr("stroke-width", "0.3")
-            .attr("stroke-linejoin", "round")
             ;
 
         if (transform !== undefined) {
@@ -127,9 +124,9 @@ export class SVGView implements ViewLike {
             .data(systemCoordinates)
             .enter()
             .append("text")
+            .attr("class", "svg-text")
             .attr("x", d => String(d.x))
             .attr("y", d => String(d.y))
-            .attr("class", "svg-text")
             .attr("dominant-baseline", "middle")
             .text(d => d.systemName)
             ;
@@ -150,11 +147,14 @@ export class SVGView implements ViewLike {
             .each(function (data: any, index) {
                 const dimensions = (this as any).getBBox();
                 G.insert("rect", "text")
+                    .attr("class", "svg-node")
                     .attr("x", dimensions.x)
                     .attr("y", dimensions.y)
+                    .attr("rx", 1)
+                    .attr("ry", 1)
                     .attr("width", dimensions.width * 1.05)
                     .attr("height", dimensions.height * 1.05)
-                    .style("fill", () => `rgb(${data.r},${data.g},${data.b})`)
+                    .style("stroke", () => `rgb(${data.r},${data.g},${data.b})`)
             })
             ;
     }

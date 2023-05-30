@@ -33,11 +33,25 @@
     div :global(#SVGSubway) {
         width: 100%;
         height: 100%;
+        cursor: move;
     }
 
     div :global(.svg-text) {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         text-anchor: middle;
         font-size: 2pt;
+        cursor: pointer;
+    }
+
+    div :global(.svg-line) {
+        stroke: whitesmoke;
+        stroke-width: 0.5;
+        stroke-linejoin: round;
+    }
+
+    div :global(.svg-node) {
+        cursor: pointer;
+        fill: white;
+        stroke-width: 0.3;
     }
 </style>
