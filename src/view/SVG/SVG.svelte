@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { systemSearchPubSub } from "../../utils/svelte-store";
     import { onMount } from "svelte";
     import type { coordinates3D } from "../../model/galaxy.js";
     import { SVGView } from "./SVGView.js";
@@ -8,6 +9,11 @@
     export let systemData: [string, coordinates3D, number][];
     export let connectionData: [coordinates3D, coordinates3D][];
     export let transform: string = "";
+
+    systemSearchPubSub.subscribe((name: string) => {
+        if (svgView === undefined) return;
+        svgView.centerOnNode(name);
+    });
 
     const onChange = (systemData, connectionData) => {
         if (svgView === undefined) return;
@@ -28,6 +34,7 @@
         width: 100%;
         height: 100%;
         text-align: center;
+        overflow: hidden;
     }
 
     div :global(#SVGSubway) {
