@@ -135,7 +135,7 @@ export class SVGView implements ViewLike {
             .attr("y", d => String(d.y))
             .attr("dominant-baseline", "middle")
             .text(d => d.systemName)
-            .attr("id", d => d.systemName)
+            .attr("id", d => `system-${d.systemName}`)
             ;
 
 
@@ -172,7 +172,7 @@ export class SVGView implements ViewLike {
         const zoom = this.zoom;
         const boundingBox = this.boundingBox;
         const closestMatch = closest(text, this.names);
-        const selection = d3.select(`#${closestMatch}`);
+        const selection = d3.select(`#system-${closestMatch}`);
         const viewboxDimensions = this.viewboxDimensions;
         const newScale = 2;
         // This janky mess is required because the translation at scales other than 1 is relative to 
