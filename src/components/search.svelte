@@ -7,6 +7,14 @@
     const onChange = (name: string) => {
         systemSearchPubSub.set(name);
     };
+
+    window.addEventListener("keydown", function (e) {
+        //TODO: this only works on windows
+        if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+            e.preventDefault();
+            input.focus();
+        }
+    });
 </script>
 
 <div>
