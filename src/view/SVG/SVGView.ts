@@ -1,7 +1,7 @@
 import type { ViewLike } from "../viewlike";
 import type { coordinates3D } from "../../model/galaxy.js";
 import { HSV2RGB, sectoHSV } from "../utils/utils";
-import { closest } from "fastest-levenshtein";
+import * as distance from "jaro-winkler";
 import * as d3 from "d3";
 
 export class SVGView implements ViewLike {
@@ -167,25 +167,16 @@ export class SVGView implements ViewLike {
             ;
     }
 
-    public centerOnNode = (text: string) => {
+    public centerOnNode = (searchStr: string) => {
         const svg = this.SVG;
         const zoom = this.zoom;
         const boundingBox = this.boundingBox;
-
-        const strFingerprinter = x => [...new Set(x.toLowerCase())].sort().join('');
-        const textFingerprint = strFingerprinter(text);
-        const systemNamesFingerprints = this.names.map(x => strFingerprinter(x));
-        const closestMatchFingerprint = closest(textFingerprint, systemNamesFingerprints);
-        const closestMatch = this.names.find(name => strFingerprinter(name) === closestMatchFingerprint);
-        console.log(
-            "Center on node - given name:", text,
-            "fingerprint:", textFingerprint,
-            "closest match fingerprint:", closestMatchFingerprint,
-            "closest match:", closestMatch
-        );
-
-
-        const selection = d3.select(`#system-${closestMatch}`);
+        const matches = this.names.map(name => {
+            const d: number = distance(name, searchStr, { caseSensitive: false });
+            return { name, distance: d };
+        }).sort((x, y) => y.distance - x.distance);
+        const closestMatch = matches[0];
+        const selection = d3.select(`#system-${closestMatch.name}`);
         const viewboxDimensions = this.viewboxDimensions;
         const newScale = 2;
         // This janky mess is required because the translation at scales other than 1 is relative to 

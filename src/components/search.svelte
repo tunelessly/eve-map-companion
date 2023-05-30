@@ -1,11 +1,12 @@
 <script lang="ts">
     import { systemSearchPubSub } from "../utils/svelte-store";
-    let input: HTMLElement;
-    let button: HTMLElement;
+    let input: HTMLInputElement;
+    let button: HTMLButtonElement;
     let systemName: string = "";
 
     const onChange = (name: string) => {
         systemSearchPubSub.set(name);
+        input.value = "";
     };
 
     window.addEventListener("keydown", function (e) {
