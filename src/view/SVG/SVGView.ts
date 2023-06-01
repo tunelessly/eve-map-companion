@@ -147,7 +147,7 @@ export class SVGView implements ViewLike {
         const d3transform = d3.zoomIdentity.translate(transformParams.translate[0], transformParams.translate[1]).scale(transformParams.scale);
         const zoom = d3.zoom()
             .scaleExtent(scaleExtent)
-            .translateExtent([[boundingBox.corner1[0] * 1.10, boundingBox.corner1[1] * 1.10], [boundingBox.corner2[0] * 1.10, boundingBox.corner2[1] * 1.10]])
+            .translateExtent([[boundingBox.corner1[0] * 1.20, boundingBox.corner1[1] * 1.20], [boundingBox.corner2[0] * 1.20, boundingBox.corner2[1] * 1.20]])
             .on("zoom", this.zoomed)
             .on("end", this.zoomEnd);
         this._zoom = zoom;
@@ -170,7 +170,7 @@ export class SVGView implements ViewLike {
             const h = Math.sqrt((c2[0] - c1[0]) ** 2);
             const v = Math.sqrt((c2[1] - c1[1]) ** 2);
             const longestSide = Math.max(h, v);
-            svg.attr("viewBox", [Math.round(c1[0] * 1.05), Math.round(c1[1] * 1.05), Math.round(longestSide), Math.round(longestSide)]);
+            svg.attr("viewBox", [Math.round(c1[0]), Math.round(c1[1]), Math.round(longestSide), Math.round(longestSide)]);
         }
 
         // Painter's algorithm
@@ -269,9 +269,9 @@ export class SVGView implements ViewLike {
     }
 
     public minimapRect(t: Transform) {
-        console.log("Transform", t);
+        const center = this.boundingBox.center;
         const viewboxDimensions = this.viewboxDimensions;
-        const transform = d3.zoomIdentity.translate(t.x, t.y).scale(t.k).invert([0, 0]);
+        const transform = d3.zoomIdentity.translate(t.x, t.y).scale(t.k).invert([center[0], center[1]]);
         const widthScreen = this.rootHTMLElement.clientWidth;
         const heightScreen = this.rootHTMLElement.clientHeight;
         const squareScreen = Math.min(widthScreen, heightScreen);
@@ -286,14 +286,14 @@ export class SVGView implements ViewLike {
         // Fucking stupid top left corner idiocy
         const actualFuckingSquareCenterUserX = x - (squareScreen / ScreenToUserRatio / 2) / t.k;
         const actualFuckingSquareCenterUserY = y - (squareScreen / ScreenToUserRatio / 2) / t.k;
-        this.G.select("#testemambo").remove();
+        this.G.select("#svg-minimap-rect").remove();
         this.G
             .append("rect")
-            .attr("id", "testemambo")
+            .attr("id", "svg-minimap-rect")
             .attr("width", widthUser)
             .attr("height", heightUser)
             .attr('stroke', 'red')
-            .attr('stroke-width', 3)
+            .attr('stroke-width', 2)
             .attr('fill', 'none')
             .attr("x", actualFuckingSquareCenterUserX)
             .attr("y", actualFuckingSquareCenterUserY)
