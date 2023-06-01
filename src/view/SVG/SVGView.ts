@@ -281,11 +281,11 @@ export class SVGView implements ViewLike {
         // TODO: Hardcoded minimum aspect ratio only works because
         // the SVG's hardcoded aspect ratio is 1:1
         const widthUser = (squareScreen * Math.max(t.aspectRatio, 1)) / ScreenToUserRatio / t.k;
-        const heightUser = squareScreen / ScreenToUserRatio / t.k;
+        const heightUser = (squareScreen * 1 / Math.min(t.aspectRatio, 1)) / ScreenToUserRatio / t.k;
 
         // Fucking stupid top left corner idiocy
         const actualFuckingSquareCenterUserX = x - ((squareScreen * Math.max(t.aspectRatio, 1)) / ScreenToUserRatio / 2) / t.k;
-        const actualFuckingSquareCenterUserY = y - (squareScreen / ScreenToUserRatio / 2) / t.k;
+        const actualFuckingSquareCenterUserY = y - ((squareScreen * 1 / Math.min(t.aspectRatio, 1)) / ScreenToUserRatio / 2) / t.k;
         this.G.select("#svg-minimap-rect").remove();
         this.G
             .append("rect")
