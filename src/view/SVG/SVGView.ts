@@ -344,6 +344,7 @@ export class SVGView implements ViewLike {
     }
 
     private zoomEnd = (event) => {
+        this.zoomed(event);
         const { transform } = event;
         const serialized = btoa(JSON.stringify(transform));
         const currentURL = new URL(window.location.toString());
