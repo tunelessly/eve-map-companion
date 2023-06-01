@@ -8,6 +8,7 @@ export type Transform = {
     k: number;
     x: number;
     y: number;
+    aspectRatio: number;
 }
 
 export const systemNameSearchPubSub: Writable<Search> = writable();

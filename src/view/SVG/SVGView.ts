@@ -269,30 +269,34 @@ export class SVGView implements ViewLike {
     }
 
     public minimapRect(t: Transform) {
-        const boundingBox = this.boundingBox;
+        console.log("Transform", t);
         const viewboxDimensions = this.viewboxDimensions;
         const transform = d3.zoomIdentity.translate(t.x, t.y).scale(t.k).invert([0, 0]);
         const widthScreen = this.rootHTMLElement.clientWidth;
         const heightScreen = this.rootHTMLElement.clientHeight;
         const squareScreen = Math.min(widthScreen, heightScreen);
         const ScreenToUserRatio = squareScreen / this.viewboxDimensions[0];
-        const x = transform[0] + viewboxDimensions[0] / 2 / t.k + boundingBox.center[0] / t.k;
-        const y = transform[1] + viewboxDimensions[1] / 2 / t.k + boundingBox.center[1] / t.k;
+        const x = transform[0] + viewboxDimensions[0] / 2 / t.k;
+        const y = transform[1] + viewboxDimensions[1] / 2 / t.k;
+        // TODO: Hardcoded minimum aspect ratio only works because
+        // the SVG's hardcoded aspect ratio is 1:1
+        const widthUser = (squareScreen * Math.max(t.aspectRatio, 1)) / ScreenToUserRatio / t.k;
+        const heightUser = squareScreen / ScreenToUserRatio / t.k;
 
         // Fucking stupid top left corner idiocy
-        const actualFuckingSquareCenterX = x - (squareScreen / ScreenToUserRatio / 2) / t.k;
-        const actualFuckingSquareCenterY = y - (squareScreen / ScreenToUserRatio / 2) / t.k;
+        const actualFuckingSquareCenterUserX = x - (squareScreen / ScreenToUserRatio / 2) / t.k;
+        const actualFuckingSquareCenterUserY = y - (squareScreen / ScreenToUserRatio / 2) / t.k;
         this.G.select("#testemambo").remove();
         this.G
             .append("rect")
             .attr("id", "testemambo")
-            .attr("width", squareScreen / ScreenToUserRatio / t.k)
-            .attr("height", squareScreen / ScreenToUserRatio / t.k)
+            .attr("width", widthUser)
+            .attr("height", heightUser)
             .attr('stroke', 'red')
             .attr('stroke-width', 3)
             .attr('fill', 'none')
-            .attr("x", actualFuckingSquareCenterX)
-            .attr("y", actualFuckingSquareCenterY)
+            .attr("x", actualFuckingSquareCenterUserX)
+            .attr("y", actualFuckingSquareCenterUserY)
             ;
     }
 
@@ -332,8 +336,11 @@ export class SVGView implements ViewLike {
 
     private zoomed = (event) => {
         const { transform } = event;
+        const screenWidth = this.rootHTMLElement.clientWidth;
+        const screenHeight = this.rootHTMLElement.clientHeight;
+        const aspectRatio = screenWidth / screenHeight;
         this.G.attr("transform", transform);
-        if (this.transformListener !== undefined) this.transformListener.set(transform);
+        if (this.transformListener !== undefined) this.transformListener.set({ ...transform, aspectRatio });
     }
 
     private zoomEnd = (event) => {
