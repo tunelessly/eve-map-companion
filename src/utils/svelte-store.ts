@@ -1,7 +1,14 @@
 import { writable, type Writable } from 'svelte/store';
 
-type search = {
+export type Search = {
     systemName: string;
 }
 
-export const systemNameSearchPubSub: Writable<search> = writable();
+export type Transform = {
+    k: number;
+    x: number;
+    y: number;
+}
+
+export const systemNameSearchPubSub: Writable<Search> = writable();
+export const transformPubSub: Writable<Transform> = writable();

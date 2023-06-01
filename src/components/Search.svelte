@@ -5,7 +5,6 @@
     let systemName: string = "";
 
     const onChange = (name: string) => {
-        console.log("Search", "Mudei chefe");
         systemNameSearchPubSub.set({ systemName: name });
         input.value = "";
     };

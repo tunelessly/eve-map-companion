@@ -3,6 +3,8 @@ import type { coordinates3D } from "../../model/galaxy.js";
 import { HSV2RGB, sectoHSV } from "../utils/utils";
 import { jaroWinkler } from "jaro-winkler-typescript";
 import * as d3 from "d3";
+import type { Writable } from "svelte/store";
+import type { Transform } from "../../utils/svelte-store"
 
 export class SVGView implements ViewLike {
     private readonly _rootHTMLElement: HTMLElement;
@@ -19,6 +21,7 @@ export class SVGView implements ViewLike {
         center: [number, number, number],
     };
     private readonly _viewboxDimensions = [100, 100];
+    private _transformListener: Writable<Transform>;
 
     private get rootHTMLElement() { return this._rootHTMLElement; }
     private get SVG() { return this._SVG; }
@@ -30,6 +33,8 @@ export class SVGView implements ViewLike {
     private get names() { return this._systemNames; }
     private get boundingBox() { return this._boundingBox; }
     private get viewboxDimensions() { return this._viewboxDimensions; }
+    private get transformListener() { return this._transformListener; }
+
 
     constructor(rootHTMLElement: HTMLElement) {
         this._rootHTMLElement = rootHTMLElement;
@@ -43,15 +48,59 @@ export class SVGView implements ViewLike {
         this.rootHTMLElement.removeChild(SVGHTMLElement);
     }
 
+    public addTransformListener(listener) {
+        this._transformListener = listener;
+    }
+
     public update(
         systemData: [string, coordinates3D, number][],
         connections: [coordinates3D, coordinates3D][],
-        transform?: string
-    ) {
+        transform?: string,
+        isInteractive: boolean = false
+    ): void {
+        this._systemData = systemData.map((data): [string, coordinates3D, number] => {
+            const name = new String(data[0]).toString();
+            const coords: coordinates3D = {
+                x: data[1].x,
+                y: data[1].y,
+                z: data[1].z,
+            }
+            const security = data[2];
+            return [name, coords, security];
+        });
+        this._connections = connections.map((data): [coordinates3D, coordinates3D] => {
+            const start = {
+                x: data[0].x,
+                y: data[0].y,
+                z: data[0].z,
+            };
+            const end = {
+                x: data[1].x,
+                y: data[1].y,
+                z: data[1].z,
+            };
+            return [start, end];
+        });
+        this._systemNames = systemData.map(x => new String(x[0]).toString());
+        this.recreate(this.systemData, this.connections, transform, isInteractive);
+    }
+
+    private recreate(
+        systemData: [string, coordinates3D, number][],
+        connections: [coordinates3D, coordinates3D][],
+        transform?: string,
+        isInteractive: boolean = false
+    ): void {
         this._systemData = systemData;
         this._connections = connections;
         this._systemNames = systemData.map(x => x[0]);
 
+        // TODO
+        // 1) Este método tem de ser configurável com merdas tipo
+        //  - se se quer pan&zoom
+        //  - se vai ser passivo no q toca a listeners
+        //  - se vai alterar o url 
+        // 2) Se vai ser maxi ou mini mapa
         const viewboxDimensions = this.viewboxDimensions;
         const systemCoordinates = systemData
             .map(x => {
@@ -106,11 +155,23 @@ export class SVGView implements ViewLike {
         svg
             .attr("xmlns", "http://www.w3.org/2000/svg")
             .attr("id", "SVGSubway")
-            .attr("viewBox", [Math.round(center[0]), Math.round(center[1]), ...viewboxDimensions])
             .attr("preserveAspectRatio", "xMidYMid meet")
-            .call(zoom)
-            .call(zoom.transform, d3transform)
             ;
+
+        if (isInteractive) {
+            svg
+                .attr("viewBox", [Math.round(center[0]), Math.round(center[1]), ...viewboxDimensions])
+                .call(zoom)
+                .call(zoom.transform, d3transform);
+        }
+        else {
+            const c1 = boundingBox.corner1;
+            const c2 = boundingBox.corner2;
+            const h = Math.sqrt((c2[0] - c1[0]) ** 2);
+            const v = Math.sqrt((c2[1] - c1[1]) ** 2);
+            const longestSide = Math.max(h, v);
+            svg.attr("viewBox", [Math.round(c1[0] * 1.05), Math.round(c1[1] * 1.05), Math.round(longestSide), Math.round(longestSide)]);
+        }
 
         // Painter's algorithm
         G
@@ -125,18 +186,32 @@ export class SVGView implements ViewLike {
             .attr("y2", d => String(d[1][1]))
             ;
 
-        G
-            .selectAll("text")
-            .data(systemCoordinates)
-            .enter()
-            .append("text")
-            .attr("class", "svg-text")
-            .attr("x", d => String(d.x))
-            .attr("y", d => String(d.y))
-            .attr("dominant-baseline", "middle")
-            .text(d => d.systemName)
-            .attr("id", d => `system-${d.systemName}`)
-            ;
+        if (isInteractive) {
+            G
+                .selectAll("text")
+                .data(systemCoordinates)
+                .enter()
+                .append("text")
+                .attr("class", "svg-text")
+                .attr("x", d => String(d.x))
+                .attr("y", d => String(d.y))
+                .attr("dominant-baseline", "middle")
+                .text(d => d.systemName)
+                .attr("id", d => `system-${d.systemName}`)
+                ;
+        } else {
+            G
+                .selectAll("circle")
+                .data(systemCoordinates)
+                .enter()
+                .append("circle")
+                .attr("class", "svg-circle")
+                .attr("cx", d => String(d.x))
+                .attr("cy", d => String(d.y))
+                .attr("r", 3)
+                .attr("id", d => `system-${d.systemName}`)
+                ;
+        }
 
 
         const previousSVG =
@@ -148,26 +223,28 @@ export class SVGView implements ViewLike {
         }
 
 
-        // Bounding boxes don't exist before DOM interactions
-        // So we must put this after they've happened
-        G
-            .selectAll("text")
-            .each(function (data: any, index) {
-                const dimensions = (this as any).getBBox();
-                G.insert("rect", "text")
-                    .attr("class", "svg-node")
-                    .attr("x", dimensions.x)
-                    .attr("y", dimensions.y)
-                    .attr("rx", 1)
-                    .attr("ry", 1)
-                    .attr("width", dimensions.width * 1.05)
-                    .attr("height", dimensions.height * 1.05)
-                    .style("stroke", () => `rgb(${data.r},${data.g},${data.b})`)
-            })
-            ;
+        if (isInteractive) {
+            // Bounding boxes don't exist before DOM interactions
+            // So we must put this after they've happened
+            G
+                .selectAll("text")
+                .each(function (data: any, index) {
+                    const dimensions = (this as any).getBBox();
+                    G.insert("rect", "text")
+                        .attr("class", "svg-node")
+                        .attr("x", dimensions.x)
+                        .attr("y", dimensions.y)
+                        .attr("rx", 1)
+                        .attr("ry", 1)
+                        .attr("width", dimensions.width * 1.05)
+                        .attr("height", dimensions.height * 1.05)
+                        .style("stroke", () => `rgb(${data.r},${data.g},${data.b})`)
+                })
+                ;
+        }
     }
 
-    public centerOnNode = (searchStr: string) => {
+    public centerOnNode(searchStr: string) {
         const svg = this.SVG;
         const zoom = this.zoom;
         const boundingBox = this.boundingBox;
@@ -176,7 +253,7 @@ export class SVGView implements ViewLike {
             return { name, distance: d };
         }).sort((x, y) => y.distance - x.distance);
         const closestMatch = matches[0];
-        const selection = d3.select(`#system-${closestMatch.name}`);
+        const selection = svg.select(`#system-${closestMatch.name}`);
         const viewboxDimensions = this.viewboxDimensions;
         const newScale = 2;
         // This janky mess is required because the translation at scales other than 1 is relative to 
@@ -188,8 +265,35 @@ export class SVGView implements ViewLike {
         const translateX = (-parseFloat(selection.attr("x")) + (viewboxDimensions[0] / 2) / newScale + boundingBox.center[0] / newScale) * newScale;
         const translateY = (-parseFloat(selection.attr("y")) + (viewboxDimensions[1] / 2) / newScale + boundingBox.center[1] / newScale) * newScale;
         const newZoom = d3.zoomIdentity.translate(translateX, translateY).scale(newScale);
-
         svg.call(zoom.transform, newZoom);
+    }
+
+    public minimapRect(t: Transform) {
+        const boundingBox = this.boundingBox;
+        const viewboxDimensions = this.viewboxDimensions;
+        const transform = d3.zoomIdentity.translate(t.x, t.y).scale(t.k).invert([0, 0]);
+        const widthScreen = this.rootHTMLElement.clientWidth;
+        const heightScreen = this.rootHTMLElement.clientHeight;
+        const squareScreen = Math.min(widthScreen, heightScreen);
+        const ScreenToUserRatio = squareScreen / this.viewboxDimensions[0];
+        const x = transform[0] + viewboxDimensions[0] / 2 / t.k + boundingBox.center[0] / t.k;
+        const y = transform[1] + viewboxDimensions[1] / 2 / t.k + boundingBox.center[1] / t.k;
+
+        // Fucking stupid top left corner idiocy
+        const actualFuckingSquareCenterX = x - (squareScreen / ScreenToUserRatio / 2) / t.k;
+        const actualFuckingSquareCenterY = y - (squareScreen / ScreenToUserRatio / 2) / t.k;
+        this.G.select("#testemambo").remove();
+        this.G
+            .append("rect")
+            .attr("id", "testemambo")
+            .attr("width", squareScreen / ScreenToUserRatio / t.k)
+            .attr("height", squareScreen / ScreenToUserRatio / t.k)
+            .attr('stroke', 'red')
+            .attr('stroke-width', 3)
+            .attr('fill', 'none')
+            .attr("x", actualFuckingSquareCenterX)
+            .attr("y", actualFuckingSquareCenterY)
+            ;
     }
 
     private YFlipper = (coordinates: coordinates3D): coordinates3D => {
@@ -229,6 +333,7 @@ export class SVGView implements ViewLike {
     private zoomed = (event) => {
         const { transform } = event;
         this.G.attr("transform", transform);
+        if (this.transformListener !== undefined) this.transformListener.set(transform);
     }
 
     private zoomEnd = (event) => {
@@ -252,7 +357,5 @@ export class SVGView implements ViewLike {
         }
     }
 
-    public onWindowResize() {
-        this.update(this.systemData, this.connections);
-    }
+    public onWindowResize() { }
 }
