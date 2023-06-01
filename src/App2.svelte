@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { Galaxy } from "./model/galaxy";
     import { Result } from "neverthrow";
+    import { graphDataPubsub, initialArgsPubsub } from "./utils/svelte-store";
     import SVGView from "./view/SVG/SVG.svelte";
     import Search from "./components/Search.svelte";
     import eveUniverse from "./model/universe_pretty_1685042923612.json";
@@ -9,33 +10,28 @@
 
     let selectedRegion: string;
     let regionNames: string[] = [];
-    let systemDataResult;
-    let connectionsResult;
-    let systemData;
-    let connectionData;
-    let args = "";
-    $: selectedRegion;
-    $: systemData;
-    $: connectionData;
-    $: args;
 
     const update = (regionName: string) => {
+        selectedRegion = regionName;
         const currentURL = new URL(window.location.toString());
         currentURL.searchParams.set("region", regionName);
         history.replaceState({}, "", currentURL.toString());
-        selectedRegion = regionName;
-        systemDataResult = Galaxy.instance.getRegionCoordinatesandStatuses(
+        const systemDataResult =
+            Galaxy.instance.getRegionCoordinatesandStatuses(regionName, true);
+        const connectionsResult = Galaxy.instance.getConnections(
             regionName,
             true
         );
-        connectionsResult = Galaxy.instance.getConnections(regionName, true);
         Result.combine([systemDataResult, connectionsResult])
             .map((data) => {
-                systemData = data[0];
-                connectionData = data[1];
+                const systemData = data[0];
+                const connectionData = data[1];
+                graphDataPubsub.set({
+                    nodeData: systemData,
+                    edgeData: connectionData,
+                });
             })
             .mapErr(console.log);
-        args = "";
     };
 
     const fromURLSearch = (
@@ -56,7 +52,7 @@
         regionNames = Galaxy.instance.getAllRegionNames();
         const params = fromURLSearch(window.location.search);
         update(params.region);
-        args = params.args;
+        initialArgsPubsub.set({ args: params.args });
     });
 </script>
 
@@ -70,7 +66,7 @@
         {/each}
     </select>
     <Search />
-    <SVGView {systemData} {connectionData} transform={args} />
+    <SVGView />
 </div>
 
 <style>

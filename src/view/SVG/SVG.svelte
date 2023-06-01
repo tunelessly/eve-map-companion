@@ -2,9 +2,10 @@
     import {
         systemNameSearchPubSub,
         transformPubSub,
+        graphDataPubsub,
+        initialArgsPubsub,
     } from "../../utils/svelte-store";
     import { onMount } from "svelte";
-    import type { coordinates3D } from "../../model/galaxy.js";
     import { SVGView } from "./SVGView.js";
 
     let root: HTMLDivElement;
@@ -12,9 +13,6 @@
     let miniMapDiv: HTMLDivElement;
     let svgViewBig: SVGView;
     let svgViewMini: SVGView;
-    export let systemData: [string, coordinates3D, number][];
-    export let connectionData: [coordinates3D, coordinates3D][];
-    export let transform: string = "";
 
     systemNameSearchPubSub.subscribe((systemSearch) => {
         if (svgViewBig === undefined) return;
@@ -26,19 +24,22 @@
         svgViewMini.minimapRect(transform);
     });
 
-    const onChange = (systemData, connectionData) => {
+    graphDataPubsub.subscribe((data) => {
         if (svgViewBig === undefined || svgViewMini === undefined) return;
-        svgViewMini.update(systemData, connectionData, transform);
-        svgViewBig.update(systemData, connectionData, transform, true);
-    };
+        svgViewMini.update(data.nodeData, data.edgeData);
+        svgViewBig.update(data.nodeData, data.edgeData, true);
+    });
+
+    initialArgsPubsub.subscribe((data) => {
+        if (svgViewBig === undefined || svgViewMini === undefined) return;
+        svgViewBig.applyTransform(data.args);
+    });
 
     onMount(() => {
         svgViewMini = new SVGView(miniMapDiv);
         svgViewBig = new SVGView(bigMapDiv);
         svgViewBig.addTransformListener(transformPubSub);
     });
-
-    $: onChange(systemData, connectionData);
 </script>
 
 <div bind:this={root} id="SVGRoot">

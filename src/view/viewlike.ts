@@ -4,7 +4,6 @@ export interface ViewLike {
     update(
         systemData: [string, coordinates3D, number][],
         connections: [coordinates3D, coordinates3D][],
-        transform?: string,
     ): void;
     dispose(): void;
     destroy(): void;

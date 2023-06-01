@@ -55,7 +55,6 @@ export class SVGView implements ViewLike {
     public update(
         systemData: [string, coordinates3D, number][],
         connections: [coordinates3D, coordinates3D][],
-        transform?: string,
         isInteractive: boolean = false
     ): void {
         this._systemData = systemData.map((data): [string, coordinates3D, number] => {
@@ -82,13 +81,12 @@ export class SVGView implements ViewLike {
             return [start, end];
         });
         this._systemNames = systemData.map(x => new String(x[0]).toString());
-        this.recreate(this.systemData, this.connections, transform, isInteractive);
+        this.recreate(this.systemData, this.connections, isInteractive);
     }
 
     private recreate(
         systemData: [string, coordinates3D, number][],
         connections: [coordinates3D, coordinates3D][],
-        transform?: string,
         isInteractive: boolean = false
     ): void {
         this._systemData = systemData;
@@ -143,7 +141,7 @@ export class SVGView implements ViewLike {
         this._SVG = svg;
         this._G = G;
 
-        const transformParams = this.transformParser(transform) || { translate: [center[0], center[1]], scale: 1 };
+        const transformParams = { translate: [center[0], center[1]], scale: 1 };
         const d3transform = d3.zoomIdentity.translate(transformParams.translate[0], transformParams.translate[1]).scale(transformParams.scale);
         const zoom = d3.zoom()
             .scaleExtent(scaleExtent)
@@ -242,6 +240,14 @@ export class SVGView implements ViewLike {
                 })
                 ;
         }
+    }
+
+    public applyTransform(transformStr: string) {
+        const transform = this.transformParser(transformStr);
+        if (transform === undefined) return;
+        const svg = this.SVG;
+        const d3transform = d3.zoomIdentity.translate(transform.translate[0], transform.translate[1]).scale(transform.scale);
+        svg.call(this.zoom.transform, d3transform);
     }
 
     public centerOnNode(searchStr: string) {
