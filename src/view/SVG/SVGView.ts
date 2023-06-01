@@ -284,7 +284,7 @@ export class SVGView implements ViewLike {
         const heightUser = squareScreen / ScreenToUserRatio / t.k;
 
         // Fucking stupid top left corner idiocy
-        const actualFuckingSquareCenterUserX = x - (squareScreen / ScreenToUserRatio / 2) / t.k;
+        const actualFuckingSquareCenterUserX = x - ((squareScreen * Math.max(t.aspectRatio, 1)) / ScreenToUserRatio / 2) / t.k;
         const actualFuckingSquareCenterUserY = y - (squareScreen / ScreenToUserRatio / 2) / t.k;
         this.G.select("#svg-minimap-rect").remove();
         this.G
