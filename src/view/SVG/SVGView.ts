@@ -242,7 +242,7 @@ export class SVGView implements ViewLike {
             G
                 .selectAll("text")
                 .each(function (data: any, index) {
-                    const dimensions = (this as SVGGElement).getBBox();
+                    const dimensions = (this as any).getBBox();
                     G.insert("rect", "text")
                         .attr("class", "svg-node")
                         .attr("x", dimensions.x)
@@ -265,11 +265,11 @@ export class SVGView implements ViewLike {
         svg.call(this.zoom.transform, d3transform);
     }
 
-    public centerOnCoords(x: number, y: number) {
+    public centerOnCoords(x: number, y: number, newScale?: number) {
         const svg = this.SVG;
         const viewboxDimensions = this.viewboxDimensions;
         const zoom = this.zoom;
-        const scale = this.zoomScale;
+        const scale = newScale || this.zoomScale;
         const center = this.boundingBox.center;
         const X = -x * scale + viewboxDimensions[0] / 2 + center[0];
         const Y = -y * scale + viewboxDimensions[0] / 2 + center[1];
@@ -287,7 +287,7 @@ export class SVGView implements ViewLike {
         const selection = svg.select(`#system-${closestMatch.name}`);
         const x = parseFloat(selection.attr("x"));
         const y = parseFloat(selection.attr("y"));
-        this.centerOnCoords(x, y);
+        this.centerOnCoords(x, y, 2);
     }
 
     public minimapRect(t: Transform) {

@@ -27,7 +27,6 @@
 
     mapClickPubSub.subscribe((coordinates) => {
         if (svgViewBig === undefined) return;
-        console.log(coordinates);
         svgViewBig.centerOnCoords(coordinates.x, coordinates.y);
     });
 
