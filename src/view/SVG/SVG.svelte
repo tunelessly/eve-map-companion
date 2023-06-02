@@ -1,9 +1,10 @@
 <script lang="ts">
     import {
         systemNameSearchPubSub,
-        transformPubSub,
+        mapDragPubSub,
         graphDataPubsub,
         initialArgsPubsub,
+        mapClickPubSub,
     } from "../../utils/svelte-store";
     import { onMount } from "svelte";
     import { SVGView } from "./SVGView.js";
@@ -19,9 +20,15 @@
         svgViewBig.centerOnNode(systemSearch.systemName);
     });
 
-    transformPubSub.subscribe((transform) => {
+    mapDragPubSub.subscribe((transform) => {
         if (svgViewMini === undefined) return;
         svgViewMini.minimapRect(transform);
+    });
+
+    mapClickPubSub.subscribe((coordinates) => {
+        if (svgViewBig === undefined) return;
+        console.log(coordinates);
+        svgViewBig.centerOnCoords(coordinates.x, coordinates.y);
     });
 
     graphDataPubsub.subscribe((data) => {
@@ -38,7 +45,8 @@
     onMount(() => {
         svgViewMini = new SVGView(miniMapDiv);
         svgViewBig = new SVGView(bigMapDiv);
-        svgViewBig.addTransformListener(transformPubSub);
+        svgViewBig.addTransformListener(mapDragPubSub);
+        svgViewMini.addClickListener(mapClickPubSub);
     });
 </script>
 

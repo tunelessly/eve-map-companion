@@ -21,7 +21,13 @@ export type InitialArgs = {
     args: string;
 }
 
+export type UserCoordinates = {
+    x: number;
+    y: number;
+}
+
 export const systemNameSearchPubSub: Writable<Search> = writable();
-export const transformPubSub: Writable<Transform> = writable();
+export const mapDragPubSub: Writable<Transform> = writable();
 export const graphDataPubsub: Writable<GraphData> = writable();
 export const initialArgsPubsub: Writable<InitialArgs> = writable();
+export const mapClickPubSub: Writable<UserCoordinates> = writable();

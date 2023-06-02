@@ -4,7 +4,7 @@ import { HSV2RGB, sectoHSV } from "../utils/utils";
 import { jaroWinkler } from "jaro-winkler-typescript";
 import * as d3 from "d3";
 import type { Writable } from "svelte/store";
-import type { Transform } from "../../utils/svelte-store"
+import type { Transform, UserCoordinates } from "../../utils/svelte-store"
 
 export class SVGView implements ViewLike {
     private readonly _rootHTMLElement: HTMLElement;
@@ -14,6 +14,7 @@ export class SVGView implements ViewLike {
     private _connections: [coordinates3D, coordinates3D][];
     private _translationVec: number[];
     private _zoom: d3.ZoomBehavior<Element, unknown>;
+    private _zoomScale: number;
     private _systemNames: string[] = [];
     private _boundingBox: {
         corner1: [number, number, number],
@@ -22,6 +23,7 @@ export class SVGView implements ViewLike {
     };
     private readonly _viewboxDimensions = [100, 100];
     private _transformListener: Writable<Transform>;
+    private _clickListener: Writable<UserCoordinates>;
 
     private get rootHTMLElement() { return this._rootHTMLElement; }
     private get SVG() { return this._SVG; }
@@ -34,6 +36,8 @@ export class SVGView implements ViewLike {
     private get boundingBox() { return this._boundingBox; }
     private get viewboxDimensions() { return this._viewboxDimensions; }
     private get transformListener() { return this._transformListener; }
+    private get clickListener() { return this._clickListener; }
+    private get zoomScale() { return this._zoomScale; }
 
 
     constructor(rootHTMLElement: HTMLElement) {
@@ -50,6 +54,10 @@ export class SVGView implements ViewLike {
 
     public addTransformListener(listener) {
         this._transformListener = listener;
+    }
+
+    public addClickListener(listener) {
+        this._clickListener = listener;
     }
 
     public update(
@@ -141,15 +149,6 @@ export class SVGView implements ViewLike {
         this._SVG = svg;
         this._G = G;
 
-        const transformParams = { translate: [center[0], center[1]], scale: 1 };
-        const d3transform = d3.zoomIdentity.translate(transformParams.translate[0], transformParams.translate[1]).scale(transformParams.scale);
-        const zoom = d3.zoom()
-            .scaleExtent(scaleExtent)
-            .translateExtent([[boundingBox.corner1[0] * 1.20, boundingBox.corner1[1] * 1.20], [boundingBox.corner2[0] * 1.20, boundingBox.corner2[1] * 1.20]])
-            .on("zoom", this.zoomed)
-            .on("end", this.zoomEnd);
-        this._zoom = zoom;
-
         svg
             .attr("xmlns", "http://www.w3.org/2000/svg")
             .attr("id", "SVGSubway")
@@ -157,6 +156,14 @@ export class SVGView implements ViewLike {
             ;
 
         if (isInteractive) {
+            const transformParams = { translate: [center[0], center[1]], scale: 1 };
+            const d3transform = d3.zoomIdentity.translate(transformParams.translate[0], transformParams.translate[1]).scale(transformParams.scale);
+            const zoom = d3.zoom()
+                .scaleExtent(scaleExtent)
+                .translateExtent([[boundingBox.corner1[0] * 1.20, boundingBox.corner1[1] * 1.20], [boundingBox.corner2[0] * 1.20, boundingBox.corner2[1] * 1.20]])
+                .on("zoom", this.zoomed)
+                .on("end", this.zoomEnd);
+            this._zoom = zoom;
             svg
                 .attr("viewBox", [Math.round(center[0]), Math.round(center[1]), ...viewboxDimensions])
                 .call(zoom)
@@ -169,6 +176,14 @@ export class SVGView implements ViewLike {
             const v = Math.sqrt((c2[1] - c1[1]) ** 2);
             const longestSide = Math.max(h, v);
             svg.attr("viewBox", [Math.round(c1[0]), Math.round(c1[1]), Math.round(longestSide), Math.round(longestSide)]);
+            svg.on("pointerdown", event => {
+                if (this.clickListener === undefined) return;
+                const coords = d3.pointer(event);
+                this.clickListener.set({
+                    x: coords[0],
+                    y: coords[1],
+                });
+            });
         }
 
         // Painter's algorithm
@@ -227,7 +242,7 @@ export class SVGView implements ViewLike {
             G
                 .selectAll("text")
                 .each(function (data: any, index) {
-                    const dimensions = (this as any).getBBox();
+                    const dimensions = (this as SVGGElement).getBBox();
                     G.insert("rect", "text")
                         .attr("class", "svg-node")
                         .attr("x", dimensions.x)
@@ -250,36 +265,37 @@ export class SVGView implements ViewLike {
         svg.call(this.zoom.transform, d3transform);
     }
 
+    public centerOnCoords(x: number, y: number) {
+        const svg = this.SVG;
+        const viewboxDimensions = this.viewboxDimensions;
+        const zoom = this.zoom;
+        const scale = this.zoomScale;
+        const center = this.boundingBox.center;
+        const X = -x * scale + viewboxDimensions[0] / 2 + center[0];
+        const Y = -y * scale + viewboxDimensions[0] / 2 + center[1];
+        const newZoom = d3.zoomIdentity.translate(X, Y).scale(scale);
+        svg.call(zoom.transform, newZoom);
+    }
+
     public centerOnNode(searchStr: string) {
         const svg = this.SVG;
-        const zoom = this.zoom;
-        const boundingBox = this.boundingBox;
         const matches = this.names.map(name => {
             const d: number = jaroWinkler(name.toLowerCase(), searchStr.toLowerCase());
             return { name, distance: d };
         }).sort((x, y) => y.distance - x.distance);
         const closestMatch = matches[0];
         const selection = svg.select(`#system-${closestMatch.name}`);
-        const viewboxDimensions = this.viewboxDimensions;
-        const newScale = 2;
-        // This janky mess is required because the translation at scales other than 1 is relative to 
-        // the viewbox's coordinate system rather than the global coordinate system.
-        // This means that the node's coordinates are fine, but displacement of the viewbox has 
-        // to be relative to the viewbox's dimensions.
-        // In the end we multiply the whole thing by the desired scale factor. 
-        // Surprisingly it works.
-        const translateX = (-parseFloat(selection.attr("x")) + (viewboxDimensions[0] / 2) / newScale + boundingBox.center[0] / newScale) * newScale;
-        const translateY = (-parseFloat(selection.attr("y")) + (viewboxDimensions[1] / 2) / newScale + boundingBox.center[1] / newScale) * newScale;
-        const newZoom = d3.zoomIdentity.translate(translateX, translateY).scale(newScale);
-        svg.call(zoom.transform, newZoom);
+        const x = parseFloat(selection.attr("x"));
+        const y = parseFloat(selection.attr("y"));
+        this.centerOnCoords(x, y);
     }
 
     public minimapRect(t: Transform) {
         const center = this.boundingBox.center;
         const viewboxDimensions = this.viewboxDimensions;
         const transform = d3.zoomIdentity.translate(t.x, t.y).scale(t.k).invert([center[0], center[1]]);
-        const widthScreen = this.rootHTMLElement.clientWidth;
-        const heightScreen = this.rootHTMLElement.clientHeight;
+        const widthScreen = (this.G.node() as SVGGElement).getBoundingClientRect().width;
+        const heightScreen = (this.G.node() as SVGGElement).getBoundingClientRect().height;
         const squareScreen = Math.min(widthScreen, heightScreen);
         const ScreenToUserRatio = squareScreen / this.viewboxDimensions[0];
         const x = transform[0] + viewboxDimensions[0] / 2 / t.k;
@@ -347,6 +363,7 @@ export class SVGView implements ViewLike {
         const aspectRatio = screenWidth / screenHeight;
         this.G.attr("transform", transform);
         if (this.transformListener !== undefined) this.transformListener.set({ ...transform, aspectRatio });
+        this._zoomScale = transform.k;
     }
 
     private zoomEnd = (event) => {
