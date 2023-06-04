@@ -39,12 +39,12 @@ class SolarSystem implements interfaces.ISolarSystem {
 
     public serialize(): interfaces.ISolarSystem {
         return {
-            systemName: this._systemName,
+            systemName: new String(this._systemName).toString(),
             security: this._security,
             x: this._x,
             y: this._y,
             z: this._z,
-            links: this._links,
+            links: this._links.map(x => new String(x).toString()),
         }
     }
 }
@@ -85,9 +85,16 @@ class Constellation implements interfaces.IConstellation {
         }
     }
 
+    public addSystem(system: SolarSystem) {
+        if (this._systems.findIndex(s => system.systemName === s.systemName) == -1)
+            this._systems.push(system);
+        else
+            console.warn(`System ${system.systemName} already present in constellation ${this._constellationName}, skipping...`);
+    }
+
     public serialize(): interfaces.IConstellation {
         return {
-            constellationName: this._constellationName,
+            constellationName: new String(this._constellationName).toString(),
             systems: this._systems.map(system => system.serialize()),
         }
     }
@@ -114,6 +121,10 @@ class Region implements interfaces.IRegion {
     public get regionSystems(): SolarSystem[] {
         return this._constellations.flatMap(c => c.systems);
     };
+
+    public addConstellation(c: Constellation) {
+        this.constellations.push(c);
+    }
 
     public findSystemConstellation(systemName: interfaces.SystemName): Result<Constellation, string> {
         for (let constellation of this.constellations) {
@@ -182,31 +193,93 @@ export class Galaxy {
     }
 
     public populateGalaxy(sourceData: interfaces.IEvEUniverse) {
-        const systems: Record<interfaces.SystemName, SolarSystem> = {};
 
         for (let r of sourceData.regions) {
             const region = new Region(r);
             this._standardRegions[region.regionName] = region;
-            for (let system of region.regionSystems) {
-                systems[system.systemName] = system;
-            }
         }
+
     }
 
     public populateGalaxyAsSubway(sourceData: interfaces.IEvEUniverse) {
-        const systems: Record<interfaces.SystemName, SolarSystem> = {};
 
         for (let r of sourceData.regions) {
             const region = new Region(r);
             this._subwayRegions[region.regionName] = region;
-            for (let system of region.regionSystems) {
-                systems[system.systemName] = system;
-            }
         }
+
+    }
+
+    private addRegionalConnections(regions: Record<interfaces.RegionName, Region>, asSubway: boolean = false): void {
+        Object.keys(regions)
+            .map(name => regions[name])
+            .map(region => {
+                return region.regionSystems
+                    .reduce((acc, system) => {
+                        for (let i = 0; i < system.links.length; i++) {
+                            const targetSystemName = system.links[i];
+                            const targetSystem = region.findSystem(targetSystemName).unwrapOr(undefined as SolarSystem);
+                            if (targetSystem === undefined) {
+                                acc.systemsNotFound.push({ source: system, targetName: targetSystemName });
+                            }
+                        }
+                        return acc;
+                    }, { region: region, systemsNotFound: [] } as
+                    { region: Region, systemsNotFound: { source: SolarSystem, targetName: interfaces.SystemName }[] }
+                    );
+            })
+            .flatMap(notFoundByRegion => {
+                const sourceRegion = notFoundByRegion.region;
+                const retVal: { sourceRegion: Region, targetConstellationResult: Result<Constellation, string>, targetSystemResult: Result<SolarSystem, string> }[] = [];
+                for (let i = 0; i < notFoundByRegion.systemsNotFound.length; i++) {
+                    const data = notFoundByRegion.systemsNotFound[i];
+                    const targetSystemName = data.targetName;
+                    const targetRegionResult = this.getSystemRegion(targetSystemName, asSubway);
+                    const targetConstellationResult = targetRegionResult.andThen(region => region.findSystemConstellation(targetSystemName));
+                    const targetSystemResult = targetRegionResult.andThen(region => region.findSystem(targetSystemName));
+                    retVal.push({ sourceRegion, targetConstellationResult, targetSystemResult });
+                }
+                return retVal;
+            }).map(results => {
+                Result.combine([results.targetConstellationResult, results.targetSystemResult])
+                    .map(r => {
+                        const targetConstellation = r[0];
+                        const targetSystem = r[1];
+                        const data = targetConstellation.serialize();
+                        data.systems = [];
+                        const newConstellation = new Constellation(data);
+                        newConstellation.addSystem(targetSystem);
+                        results.sourceRegion.addConstellation(newConstellation);
+                        console.log(`Regional connection: Added ${targetSystem.systemName} to constellation ${newConstellation.constellationName} and to region ${results.sourceRegion.regionName}`);
+                    })
+                    .mapErr(e => {
+                        console.error(`Error attempting to add out-of-region system to constellation: ${e}`);
+                    });
+            });
     }
 
     public getAllRegionNames = (): interfaces.RegionName[] => {
         return Object.keys(this._standardRegions);
+    }
+
+    private getSystemRegion(systemName: interfaces.SystemName, asSubway: boolean = false): Result<Region, string> {
+        const regions = asSubway ? this._subwayRegions : this._standardRegions;
+        const result = Object.keys(regions)
+            .map(regionName => regions[regionName])
+            .map(region => {
+                return { region, systemResult: region.findSystem(systemName) };
+            })
+            .filter(r => r.systemResult.isOk());
+        if (result.length == 1) {
+            return ok(result[0].region)
+        }
+        else if (result.length > 1) {
+            console.dir(result);
+            return err(`System named ${systemName} found in multiple regions! !!!This Should Never Happen!!!`);
+        }
+        else {
+            return err(`System named ${systemName} not found in any region`);
+        }
     }
 
     private getRegionByName(regionName: interfaces.RegionName, asSubway: boolean = false): Result<Region, string> {
@@ -266,7 +339,7 @@ export class Galaxy {
 
                     for (let j = 0; j < mlinks.length; j++) {
                         const targetSystemName = mlinks[j];
-                        const targetSystem = region.findSystem(targetSystemName).mapErr(console.error).unwrapOr(undefined);
+                        const targetSystem = region.findSystem(targetSystemName).mapErr(console.warn).unwrapOr(undefined);
                         const targetSystemIndex = systems.findIndex(system => system.systemName === targetSystemName);
                         if (targetSystem === undefined) {
                             continue;
@@ -295,6 +368,7 @@ export class Galaxy {
     }
 
     public generateSubwayRepresentation = () => {
+        this.addRegionalConnections(this._standardRegions);
         const regions = this._standardRegions;
         Object.keys(regions)
             .map(regionName => regions[regionName])

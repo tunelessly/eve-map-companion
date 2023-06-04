@@ -101,12 +101,6 @@ export class SVGView implements ViewLike {
         this._connections = connections;
         this._systemNames = systemData.map(x => x[0]);
 
-        // TODO
-        // 1) Este método tem de ser configurável com merdas tipo
-        //  - se se quer pan&zoom
-        //  - se vai ser passivo no q toca a listeners
-        //  - se vai alterar o url 
-        // 2) Se vai ser maxi ou mini mapa
         const viewboxDimensions = this.viewboxDimensions;
         const systemCoordinates = systemData
             .map(x => {
@@ -177,6 +171,8 @@ export class SVGView implements ViewLike {
             const longestSide = Math.max(h, v);
             svg.attr("viewBox", [Math.round(c1[0]), Math.round(c1[1]), Math.round(longestSide), Math.round(longestSide)]);
             svg.on("pointerdown", event => {
+                // TODO: This is MVP tier 
+                // It'll need replacing with a proper solution 
                 if (this.clickListener === undefined) return;
                 const coords = d3.pointer(event);
                 this.clickListener.set({
