@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { ok, err, Result } from "neverthrow";
-import { allRegionNames, galaxyCoordinatesAndStatuses, regionCoordinatesAndStatuses, regionConnections } from "./sql/queries";
+import { allRegionNames, galaxyCoordinatesAndStatuses, regionCoordinatesAndStatuses, regionConnections2 as regionConnections } from "./sql/queries";
 import type { Database, SqlValue } from "sql.js";
 import type * as interfaces from './interfaces.js';
 

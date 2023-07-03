@@ -98,43 +98,17 @@ const edgeData = `
 export const regionConnections2 = `
     ${edgeData}
     select
-         fromRegionID
-        ,fromConstellationID
-        ,fromSolarSystemID
-        ,toRegionID
-        ,toConstellationID
-        ,toSolarSystemID
-        ,fromRegionName
-        ,toRegionName
-        ,fromSystemName
-        ,toSystemName
+         fromX
+        ,fromY
+        ,fromZ
+        ,toX
+        ,toY
+        ,toZ
     from
         data
     where
         rn = 1
-    order by
-         fromRegionName asc
-        ,toRegionName asc
-        ,fromSystemName asc
-        ,toSystemName asc
 `;
-
-// export const regionCoordinatesAndStatuses = `
-//     select 
-//          s.solarSystemName
-//         ,s.x 
-//         ,s.y
-//         ,s.z
-//         ,s.security
-//     from
-//         systems s
-//     join
-//         regions r
-//     on
-//         s.regionID = r.regionID
-//     where
-//         r.regionName = $name
-// `;
 
 export const regionCoordinatesAndStatuses = `
     ${edgeData},
