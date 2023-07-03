@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Galaxy } from "./model/galaxy";
+    // import { Galaxy } from "./model/galaxy";
+    import { Galaxy } from "./model/galaxy2";
     import { Result } from "neverthrow";
     import { graphDataPubsub, initialArgsPubsub } from "./utils/svelte-store";
     import SVGView from "./view/SVG/SVG.svelte";
@@ -47,9 +48,13 @@
     };
 
     onMount(() => {
-        Galaxy.instance.populateGalaxy(eveUniverse);
-        Galaxy.instance.populateGalaxyAsSubway(eveSubway);
         regionNames = Galaxy.instance.getAllRegionNames();
+        // console.dir(mambo.instance.getAllRegionNames());
+        // console.dir(mambo.instance.getGalaxyCoordinatesandStatuses());
+        console.dir(Galaxy.instance.getRegionCoordinatesandStatuses("Aridia"));
+        // console.dir(mambo.instance.getConnections("Aridia"));
+        // Galaxy.instance.populateGalaxy(eveUniverse);
+        // Galaxy.instance.populateGalaxyAsSubway(eveSubway);
         const params = fromURLSearch(window.location.search);
         update(params.region);
         initialArgsPubsub.set({ args: params.args });

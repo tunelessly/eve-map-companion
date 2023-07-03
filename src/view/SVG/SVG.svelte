@@ -35,7 +35,9 @@
 
     graphDataPubsub.subscribe((data) => {
         if (svgViewBig === undefined || svgViewMini === undefined) return;
+        console.log("Drawing minimap");
         svgViewMini.update(data.nodeData, data.edgeData);
+        console.log("Drawing maximap");
         svgViewBig.update(data.nodeData, data.edgeData, true);
     });
 
