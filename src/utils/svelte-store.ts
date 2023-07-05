@@ -1,5 +1,5 @@
 import { writable, type Writable } from 'svelte/store';
-import type { coordinates3D } from "../model/galaxy";
+import type { INode, IEdge } from "../model/interfaces";
 
 export type Search = {
     systemName: string;
@@ -13,8 +13,8 @@ export type Transform = {
 }
 
 export type GraphData = {
-    nodeData: [string, coordinates3D, number][];
-    edgeData: [coordinates3D, coordinates3D][];
+    nodeData: INode[];
+    edgeData: IEdge[];
 }
 
 export type InitialArgs = {

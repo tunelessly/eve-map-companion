@@ -1,5 +1,5 @@
 import type { ViewLike } from "../viewlike";
-import type { coordinates3D } from "../../model/galaxy.js";
+import type { INode, IEdge, ICoordinates3D } from "../../model/interfaces";
 import { HSV2RGB, sectoHSV } from "../utils/utils";
 import { jaroWinkler } from "jaro-winkler-typescript";
 import * as d3 from "d3";
@@ -10,8 +10,8 @@ export class SVGView implements ViewLike {
     private readonly _rootHTMLElement: HTMLElement;
     private _SVG: d3.Selection<SVGSVGElement, undefined, null, undefined>;
     private _G: d3.Selection<d3.BaseType, undefined, null, undefined>;
-    private _systemData: [string, coordinates3D, number][];
-    private _connections: [coordinates3D, coordinates3D][];
+    private _systemData: INode[];
+    private _connections: IEdge[];
     private _translationVec: number[];
     private _zoom: d3.ZoomBehavior<Element, unknown>;
     private _zoomScale: number;
@@ -61,75 +61,44 @@ export class SVGView implements ViewLike {
     }
 
     public update(
-        systemData: [string, coordinates3D, number][],
-        connections: [coordinates3D, coordinates3D][],
+        systemData: INode[],
+        connections: IEdge[],
         isInteractive: boolean = false
     ): void {
-        this._systemData = systemData.map((data): [string, coordinates3D, number] => {
-            const name = new String(data[0]).toString();
-            const coords: coordinates3D = {
-                x: data[1].x,
-                y: data[1].y,
-                z: data[1].z,
-            }
-            const security = data[2];
-            return [name, coords, security];
-        });
-        this._connections = connections.map((data): [coordinates3D, coordinates3D] => {
-            const start = {
-                x: data[0].x,
-                y: data[0].y,
-                z: data[0].z,
-            };
-            const end = {
-                x: data[1].x,
-                y: data[1].y,
-                z: data[1].z,
-            };
-            return [start, end];
-        });
-        this._systemNames = systemData.map(x => new String(x[0]).toString());
+        this._systemData = systemData.reduce((acc, node) => { acc.push({ ...node }); return acc; }, []);
+        this._connections = connections.reduce((acc, edge) => { acc.push({ ...edge }); return acc; }, []);
+        this._systemNames = systemData.map(system => new String(system.systemName).toString());
         this.recreate(this.systemData, this.connections, isInteractive);
     }
 
     private recreate(
-        systemData: [string, coordinates3D, number][],
-        connections: [coordinates3D, coordinates3D][],
+        systemData: INode[],
+        connections: IEdge[],
         isInteractive: boolean = false
     ): void {
-        this._systemData = systemData;
-        this._connections = connections;
-        this._systemNames = systemData.map(x => x[0]);
-
         const viewboxDimensions = this.viewboxDimensions;
         const systemCoordinates = systemData
-            .map(x => {
-                x[1] = this.YFlipper(x[1]);
-                return x;
+            .map(system => {
+                system.y = -system.y;
+                return system;
             })
-            .map(x => {
+            .map(system => {
                 return {
-                    systemName: x[0],
-                    ...x[1],
-                    ...HSV2RGB(sectoHSV(x[2])),
+                    ...system,
+                    ...HSV2RGB(sectoHSV(system.security)),
                 };
             });
         const connectionCoordinates = connections
-            .map(c => {
-                c[0] = this.YFlipper(c[0]);
-                c[1] = this.YFlipper(c[1]);
-                return c;
-            })
-            .map(c => {
-                const start = c[0];
-                const end = c[1];
-                return [[start.x, start.y, start.z], [end.x, end.y, end.z]];
+            .map(edge => {
+                edge.fromY = -edge.fromY;
+                edge.toY = -edge.toY;
+                return edge;
             });
 
 
         const boundingBox = this.computeBoundingBox(systemCoordinates.map(
-            s => {
-                return [s.x, s.y, s.z];
+            system => {
+                return [system.x, system.y, system.z];
             }
         ));
         this._boundingBox = boundingBox;
@@ -183,18 +152,20 @@ export class SVGView implements ViewLike {
         }
 
         // Painter's algorithm
+        console.log("Linhas");
         G
             .selectAll("line")
             .data(connectionCoordinates)
             .enter()
             .append("line")
             .attr("class", "svg-line")
-            .attr("x1", d => String(d[0][0]))
-            .attr("y1", d => String(d[0][1]))
-            .attr("x2", d => String(d[1][0]))
-            .attr("y2", d => String(d[1][1]))
+            .attr("x1", edge => String(edge.fromX))
+            .attr("y1", edge => String(edge.fromY))
+            .attr("x2", edge => String(edge.toX))
+            .attr("y2", edge => String(edge.toY))
             ;
 
+        console.log("Nós");
         if (isInteractive) {
             G
                 .selectAll("text")
@@ -202,11 +173,11 @@ export class SVGView implements ViewLike {
                 .enter()
                 .append("text")
                 .attr("class", "svg-text")
-                .attr("x", d => String(d.x))
-                .attr("y", d => String(d.y))
+                .attr("x", system => String(system.x))
+                .attr("y", system => String(system.y))
                 .attr("dominant-baseline", "middle")
-                .text(d => d.systemName)
-                .attr("id", d => `system-${d.systemName}`)
+                .text(system => system.systemName)
+                .attr("id", system => `system-${system.systemName}`)
                 ;
         } else {
             G
@@ -215,8 +186,8 @@ export class SVGView implements ViewLike {
                 .enter()
                 .append("circle")
                 .attr("class", "svg-circle")
-                .attr("cx", d => String(d.x))
-                .attr("cy", d => String(d.y))
+                .attr("cx", system => String(system.x))
+                .attr("cy", system => String(system.y))
                 .attr("r", 3)
                 .attr("id", d => `system-${d.systemName}`)
                 ;
@@ -233,21 +204,22 @@ export class SVGView implements ViewLike {
 
 
         if (isInteractive) {
+            console.log("Rectângulo");
             // Bounding boxes don't exist before DOM interactions
             // So we must put this after they've happened
             G
                 .selectAll("text")
-                .each(function (data: any, index) {
+                .each(function (system: any, index) {
                     const dimensions = (this as any).getBBox();
                     G.insert("rect", "text")
                         .attr("class", "svg-node")
-                        .attr("x", dimensions.x)
-                        .attr("y", dimensions.y)
+                        .attr("x", String(dimensions.x))
+                        .attr("y", String(dimensions.y))
                         .attr("rx", 1)
                         .attr("ry", 1)
-                        .attr("width", dimensions.width * 1.05)
-                        .attr("height", dimensions.height * 1.05)
-                        .style("stroke", () => `rgb(${data.r},${data.g},${data.b})`)
+                        .attr("width", String(dimensions.width * 1.05))
+                        .attr("height", String(dimensions.height * 1.05))
+                        .style("stroke", () => `rgb(${system.r},${system.g},${system.b})`)
                 })
                 ;
         }
@@ -318,7 +290,7 @@ export class SVGView implements ViewLike {
             ;
     }
 
-    private YFlipper = (coordinates: coordinates3D): coordinates3D => {
+    private YFlipper = (coordinates: ICoordinates3D): ICoordinates3D => {
         return {
             x: coordinates.x,
             y: -coordinates.y,

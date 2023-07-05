@@ -2,25 +2,25 @@ export type RegionName = string;
 export type ConstellationName = string;
 export type SystemName = string;
 
-export interface ISolarSystem {
+export interface INode {
     systemName: SystemName;
     security: number;
     x: number;
     y: number;
     z: number;
-    links: SystemName[];
 }
 
-export interface IConstellation {
-    constellationName: ConstellationName;
-    systems: ISolarSystem[];
+export interface IEdge {
+    fromX: number;
+    fromY: number;
+    fromZ: number;
+    toX: number;
+    toY: number;
+    toZ: number;
 }
 
-export interface IRegion {
-    regionName: RegionName;
-    constellations: IConstellation[];
-}
-
-export interface IEvEUniverse {
-    regions: IRegion[];
+export interface ICoordinates3D {
+    x: number;
+    y: number;
+    z: number;
 }

@@ -1,9 +1,9 @@
-import type { coordinates3D } from "../model/galaxy";
+import type { INode, IEdge } from "../model/interfaces";
 
 export interface ViewLike {
     update(
-        systemData: [string, coordinates3D, number][],
-        connections: [coordinates3D, coordinates3D][],
+        systemData: INode[],
+        connections: IEdge[],
     ): void;
     dispose(): void;
     destroy(): void;

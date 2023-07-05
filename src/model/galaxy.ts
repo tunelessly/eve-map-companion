@@ -1,7 +1,8 @@
-import type * as interfaces from './interfaces.js';
+import { db } from "./db";
 import { ok, err, Result } from "neverthrow";
-import * as d3 from "d3";
-import * as cola from "webcola";
+import { allRegionNames, regionCoordinatesAndStatusesSubway, regionConnectionsSubway } from "./sql/queries";
+import type { Database, SqlValue } from "sql.js";
+import type * as interfaces from './interfaces.js';
 
 export type coordinates3D = {
     x: number;
@@ -9,180 +10,11 @@ export type coordinates3D = {
     z: number;
 }
 
-class SolarSystem implements interfaces.ISolarSystem {
-    private readonly _systemName: interfaces.SystemName;
-    private readonly _security: number;
-    private readonly _x: number;
-    private readonly _y: number;
-    private readonly _z: number;
-    private readonly _links: interfaces.SystemName[];
-
-    constructor(data: interfaces.ISolarSystem) {
-        this._systemName = data.systemName;
-        this._security = parseFloat(Number(data.security).toPrecision(1));
-        this._x = data.x;
-        this._y = data.y;
-        this._z = data.z;
-        this._links = data.links;
-    }
-
-    public get systemName() { return this._systemName; }
-    public get security() { return this._security; }
-    public get x() { return this._x; }
-    public get y() { return this._y; }
-    public get z() { return this._z; }
-    public get links() { return this._links; }
-
-    public addLink(systemName: interfaces.SystemName) {
-        this._links.push(systemName);
-    }
-
-    public serialize(): interfaces.ISolarSystem {
-        return {
-            systemName: new String(this._systemName).toString(),
-            security: this._security,
-            x: this._x,
-            y: this._y,
-            z: this._z,
-            links: this._links.map(x => new String(x).toString()),
-        }
-    }
-}
-
-class Constellation implements interfaces.IConstellation {
-    private readonly _constellationName: interfaces.ConstellationName;
-    private readonly _systems: SolarSystem[];
-
-    constructor(data: interfaces.IConstellation) {
-        this._constellationName = data.constellationName;
-
-        const systems = [];
-        for (let s of data.systems) {
-            const system = new SolarSystem(s);
-            systems.push(system);
-        }
-        this._systems = systems;
-    }
-
-    public get constellationName() { return this._constellationName; }
-    public get systems() { return this._systems; }
-
-    public replaceSystem(replacement: SolarSystem): Result<string, string> {
-        let found = false;
-        console.log(`\t Attempting to replace system ${replacement.systemName} in constellation ${this._constellationName}`);
-        for (let i = 0; i < this._systems.length; i++) {
-            const system = this._systems[i];
-            if (system.systemName === replacement.systemName) {
-                found = true;
-                this._systems[i] = replacement;
-            }
-        }
-        if (found) {
-            return ok(`Successfully replaced ${replacement.systemName} in constellation ${this._constellationName}`)
-        }
-        else {
-            return err(`Unable to find ${replacement.systemName} in constellation ${this._constellationName}`);
-        }
-    }
-
-    public addSystem(system: SolarSystem) {
-        if (this._systems.findIndex(s => system.systemName === s.systemName) == -1)
-            this._systems.push(system);
-        else
-            console.warn(`System ${system.systemName} already present in constellation ${this._constellationName}, skipping...`);
-    }
-
-    public serialize(): interfaces.IConstellation {
-        return {
-            constellationName: new String(this._constellationName).toString(),
-            systems: this._systems.map(system => system.serialize()),
-        }
-    }
-}
-
-class Region implements interfaces.IRegion {
-    private readonly _regionName: interfaces.RegionName;
-    private readonly _constellations: Constellation[];
-
-    constructor(data: interfaces.IRegion) {
-        this._regionName = data.regionName;
-
-        const constellations = [];
-        for (let c of data.constellations) {
-            const constellation = new Constellation(c);
-            constellations.push(constellation);
-        }
-        this._constellations = constellations;
-    }
-
-    public get regionName() { return this._regionName };
-    public get constellations() { return this._constellations };
-
-    public get regionSystems(): SolarSystem[] {
-        return this._constellations.flatMap(c => c.systems);
-    };
-
-    public addConstellation(c: Constellation) {
-        this.constellations.push(c);
-    }
-
-    public findSystemConstellation(systemName: interfaces.SystemName): Result<Constellation, string> {
-        for (let constellation of this.constellations) {
-            const result = constellation.systems.find(s => s.systemName === systemName);
-            if (result !== undefined) {
-                return ok(constellation);
-            }
-        }
-        return err(`System ${systemName} not found in any of ${this._regionName}'s constellations.`);
-    }
-
-    public findSystem(systemName: interfaces.SystemName): Result<SolarSystem, string> {
-        const system = this._constellations
-            .flatMap(c => c.systems)
-            .find(s => s.systemName === systemName)
-
-        if (system === undefined) {
-            return err(`System ${systemName} not found in region ${this._regionName}`);
-        }
-        else {
-            return ok(system)
-        }
-    }
-
-    public replaceSystem(replacement: SolarSystem): Result<string, string> {
-        const results: Result<string, string>[] = [];
-        console.log(`Replacing system ${replacement.systemName} in region ${this._regionName}`);
-        for (let i = 0; i < this._constellations.length; i++) {
-            const constellation = this._constellations[i];
-            const result = constellation.replaceSystem(replacement);
-            result
-                .map(s => console.log(`\t ${s}`))
-                .mapErr(s => console.error(`\t ${s}`));
-            results.push(result);
-        }
-
-        for (let result of results) {
-            if (result.isOk()) {
-                return result;
-            }
-        }
-
-        return err(`System ${replacement.systemName} not found in any of the constellations of ${this._regionName}`);
-    }
-
-    public serialize(): interfaces.IRegion {
-        return {
-            regionName: this._regionName,
-            constellations: this._constellations.map(constellation => constellation.serialize())
-        }
-    }
-}
-
 export class Galaxy {
     private static readonly _name: string = "New Eden";
     private static _instance: Galaxy;
-    private _standardRegions: Record<interfaces.RegionName, Region> = {};
-    private _subwayRegions: Record<interfaces.RegionName, Region> = {}
+    private _regionNames: interfaces.RegionName[];
+    private _db: Database = db;
 
     private constructor() { }
 
@@ -192,266 +24,56 @@ export class Galaxy {
         return this._instance || (this._instance = new this());
     }
 
-    public populateGalaxy(sourceData: interfaces.IEvEUniverse) {
+    public getAllRegionNames(): interfaces.RegionName[] {
+        const data = this._db.exec(allRegionNames)
+            .flatMap(d => d.values)
+            .map(d => d[0].valueOf() as string)
+            ;
+        this._regionNames = data;
+        return data;
+    }
 
-        for (let r of sourceData.regions) {
-            const region = new Region(r);
-            this._standardRegions[region.regionName] = region;
+    private get regionNames(): interfaces.RegionName[] {
+        if (this._regionNames === undefined) {
+            this.getAllRegionNames();
         }
-
+        return this._regionNames;
     }
 
-    public populateGalaxyAsSubway(sourceData: interfaces.IEvEUniverse) {
-
-        for (let r of sourceData.regions) {
-            const region = new Region(r);
-            this._subwayRegions[region.regionName] = region;
-        }
-
+    private getRegionData(regionName: string, query: string): Object[] {
+        return this._db.exec(query, { "$name": regionName })
+            .map(d => d.values)
+            .flatMap(d => d.map(r => JSON.parse(r[0].valueOf() as string)))
+            ;
     }
 
-    private addRegionalConnections(regions: Record<interfaces.RegionName, Region>, asSubway: boolean = false): void {
-        Object.keys(regions)
-            .map(name => regions[name])
-            .map(region => {
-                return region.regionSystems
-                    .reduce((acc, system) => {
-                        for (let i = 0; i < system.links.length; i++) {
-                            const targetSystemName = system.links[i];
-                            const targetSystem = region.findSystem(targetSystemName).unwrapOr(undefined as SolarSystem);
-                            if (targetSystem === undefined) {
-                                acc.systemsNotFound.push({ source: system, targetName: targetSystemName });
-                            }
-                        }
-                        return acc;
-                    }, { region: region, systemsNotFound: [] } as
-                    { region: Region, systemsNotFound: { source: SolarSystem, targetName: interfaces.SystemName }[] }
-                    );
-            })
-            .flatMap(notFoundByRegion => {
-                const sourceRegion = notFoundByRegion.region;
-                const retVal: { sourceRegion: Region, targetConstellationResult: Result<Constellation, string>, targetSystemResult: Result<SolarSystem, string> }[] = [];
-                for (let i = 0; i < notFoundByRegion.systemsNotFound.length; i++) {
-                    const data = notFoundByRegion.systemsNotFound[i];
-                    const targetSystemName = data.targetName;
-                    const targetRegionResult = this.getSystemRegion(targetSystemName, asSubway);
-                    const targetConstellationResult = targetRegionResult.andThen(region => region.findSystemConstellation(targetSystemName));
-                    const targetSystemResult = targetRegionResult.andThen(region => region.findSystem(targetSystemName));
-                    retVal.push({ sourceRegion, targetConstellationResult, targetSystemResult });
-                }
-                return retVal;
-            }).map(results => {
-                Result.combine([results.targetConstellationResult, results.targetSystemResult])
-                    .map(r => {
-                        const targetConstellation = r[0];
-                        const targetSystem = r[1];
-                        const data = targetConstellation.serialize();
-                        data.systems = [];
-                        const newConstellation = new Constellation(data);
-                        newConstellation.addSystem(targetSystem);
-                        results.sourceRegion.addConstellation(newConstellation);
-                        console.log(`Regional connection: Added ${targetSystem.systemName} to constellation ${newConstellation.constellationName} and to region ${results.sourceRegion.regionName}`);
-                    })
-                    .mapErr(e => {
-                        console.error(`Error attempting to add out-of-region system to constellation: ${e}`);
-                    });
-            });
-    }
-
-    public getAllRegionNames = (): interfaces.RegionName[] => {
-        return Object.keys(this._standardRegions);
-    }
-
-    private getSystemRegion(systemName: interfaces.SystemName, asSubway: boolean = false): Result<Region, string> {
-        const regions = asSubway ? this._subwayRegions : this._standardRegions;
-        const result = Object.keys(regions)
-            .map(regionName => regions[regionName])
-            .map(region => {
-                return { region, systemResult: region.findSystem(systemName) };
-            })
-            .filter(r => r.systemResult.isOk());
-        if (result.length == 1) {
-            return ok(result[0].region)
-        }
-        else if (result.length > 1) {
-            console.dir(result);
-            return err(`System named ${systemName} found in multiple regions! !!!This Should Never Happen!!!`);
+    public getRegionCoordinatesandStatuses(regionName: string): Result<interfaces.INode[], string> {
+        if (this.regionNames.find(x => x == regionName) !== undefined) {
+            const data = this.getRegionData(regionName, regionCoordinatesAndStatusesSubway) as interfaces.INode[];
+            if (data.length === 0) {
+                return err(`Region not found: ${regionName}`);
+            }
+            else {
+                return ok(data);
+            }
         }
         else {
-            return err(`System named ${systemName} not found in any region`);
+            return err(`Could not find region: ${regionName}`);
         }
     }
 
-    private getRegionByName(regionName: interfaces.RegionName, asSubway: boolean = false): Result<Region, string> {
-        const regions = asSubway ? this._subwayRegions : this._standardRegions;
-        const region = regions[regionName];
-        if (region === undefined) {
-            return err(`${asSubway ? "Subway Region" : "Standard Region"} ${regionName} not found`)
+    public getConnections(regionName: interfaces.RegionName): Result<interfaces.IEdge[], string> {
+        if (this.regionNames.find(x => x == regionName) !== undefined) {
+            const data = this.getRegionData(regionName, regionConnectionsSubway) as interfaces.IEdge[];
+            if (data.length === 0) {
+                return err(`Region not found: ${regionName}`);
+            }
+            else {
+                return ok(data);
+            }
         }
         else {
-            return ok(region);
+            return err(`Could not find region: ${regionName}`);
         }
-    }
-
-    public getGalaxyCoordinatesandStatuses = (): [string, coordinates3D, number][] => {
-        return Object.keys(this._standardRegions)
-            .map(regionName => this._standardRegions[regionName])
-            .flatMap(region => region.regionSystems)
-            .map(system => [system.systemName, { x: system.x, y: system.y, z: system.z }, system.security]);
-    }
-
-    public getRegionCoordinatesandStatuses = (regionName: string, asSubway: boolean = false): Result<[string, coordinates3D, number][], string> => {
-        return this.getRegionByName(regionName, asSubway)
-            .map(region => {
-                const mambo = region.regionSystems.reduce((acc, system) => {
-                    acc.push(
-                        [system.systemName, { x: system.x, y: system.y, z: system.z }, system.security]
-                    );
-                    return acc;
-                }, []);
-                return mambo;
-            });
-    }
-
-    // The complication is due to the fact that _all_ stargate connections are bidirectional
-    // but the data doesn't assume that that's the case.
-    // So in order to avoid drawing two edges that are exactly the same on top of one another 
-    // we remove them here.
-    private getConnectionsAs<T>
-        (
-            regionName: interfaces.RegionName,
-            asFn: (source: SolarSystem, target: SolarSystem, sourceIndex?: number, targetIndex?: number) => T,
-            asSubway: boolean = false
-        )
-        : Result<T[], string> {
-        return this.getRegionByName(regionName, asSubway)
-            .map(region => {
-                const systems = region.regionSystems;
-                const links = [];
-                const forward: Record<string, string[]> = {};
-
-                for (let i = 0; i < systems.length; i++) {
-                    const sourceSystem = systems[i];
-                    const sourceSystemName = sourceSystem.systemName;
-                    const sourceIndex = i;
-                    const mlinks = sourceSystem.links;
-                    if (forward[sourceSystemName] === undefined) forward[sourceSystemName] = [];
-
-                    for (let j = 0; j < mlinks.length; j++) {
-                        const targetSystemName = mlinks[j];
-                        const targetSystem = region.findSystem(targetSystemName).mapErr(console.warn).unwrapOr(undefined);
-                        const targetSystemIndex = systems.findIndex(system => system.systemName === targetSystemName);
-                        if (targetSystem === undefined) {
-                            continue;
-                        }
-                        else if (forward[targetSystemName]?.find(name => name === sourceSystemName) !== undefined) {
-                            continue;
-                        }
-                        else {
-                            forward[sourceSystemName].push(targetSystemName);
-                            links.push(asFn(sourceSystem, targetSystem, sourceIndex, targetSystemIndex));
-                        }
-                    }
-                }
-                return links;
-            });
-    }
-
-    public getConnections = (regionName: interfaces.RegionName, asSubway: boolean = false): Result<[coordinates3D, coordinates3D][], string> => {
-        return this.getConnectionsAs(
-            regionName,
-            (source, target) => {
-                return [{ x: source.x, y: source.y, z: source.z }, { x: target.x, y: target.y, z: target.z }]
-            },
-            asSubway
-        );
-    }
-
-    public generateSubwayRepresentation = () => {
-        this.addRegionalConnections(this._standardRegions);
-        const regions = this._standardRegions;
-        Object.keys(regions)
-            .map(regionName => regions[regionName])
-            .map(region => {
-                const systems = region.regionSystems;
-                const links = this.getConnectionsAs(
-                    region.regionName,
-                    (source, target, sourceIndex, targetIndex) => {
-                        return { source: sourceIndex, target: targetIndex, s: source.systemName, t: target.systemName };
-                    }
-                );
-
-                links.map(l => {
-                    const nodes = systems.map(system => {
-                        const d = {
-                            systemName: system.systemName,
-                            security: system.security,
-                            x: system.x,
-                            y: system.y,
-                            z: 0,
-                            links: system.links
-                        }
-                        return d;
-                    });
-
-                    const groups = [];
-
-                    for (let i = 0; i < nodes.length; i++) {
-                        const system = nodes[i];
-                        const result = region.findSystemConstellation(system.systemName);
-                        result
-                            .map(c => {
-                                const index = groups.findIndex(r => r.constellationName === c.constellationName);
-                                let group;
-                                if (index == -1) {
-                                    group = { leaves: [], constellationName: c.constellationName }
-                                    groups.push(group);
-                                }
-                                else {
-                                    group = groups[index];
-                                }
-                                group.leaves.push(i);
-                            })
-                            .mapErr(console.error);
-                    }
-
-
-                    const simulation = cola.d3adaptor(d3)
-                        .nodes(nodes)
-                        .links(l)
-                        .groups(groups)
-                        .linkDistance(10)
-                        .symmetricDiffLinkLengths(10)
-                        .avoidOverlaps(true)
-                        .handleDisconnected(true)
-                        .stop()
-                        ;
-                    simulation.start(5000);
-
-                    const newSystems = nodes.map(node => {
-                        return new SolarSystem(node);
-                    });
-
-                    console.log(`Copying region ${region.regionName}`);
-                    const newRegion = new Region(region);
-                    newSystems.forEach(system => {
-                        newRegion.replaceSystem(system)
-                            .map(console.log)
-                            .mapErr(console.error)
-                            ;
-                    });
-                    this._subwayRegions[newRegion.regionName] = newRegion;
-                })
-                    .mapErr(e => console.error(`Error trying to get links during subwayification: ${e}`));
-            });
-    }
-
-    public serializeSubway() {
-        return Object.keys(this._subwayRegions)
-            .map(regionName => this._subwayRegions[regionName])
-            .reduce((acc, region) => {
-                acc.regions.push(region.serialize());
-                return acc;
-            }, { regions: [] })
     }
 }
