@@ -1,6 +1,7 @@
 export const allRegionNames = `
     select
-        r.regionName
+         r.regionName
+        ,r.regionID
     from
         regions r
     order by
@@ -16,39 +17,6 @@ export const galaxyCoordinatesAndStatuses = `
         ,s.security
     from
         systems s
-`;
-
-
-export const regionConnections = `
-    select 
-         s1.x
-        ,s1.y
-        ,s1.z
-        ,s2.x
-        ,s2.y
-        ,s2.z
-    from 
-        jumpsSingle j
-    join
-        systems s1
-    on
-        j.fromSolarSystemID = s1.solarSystemID
-    join
-        systems s2
-    on
-        j.toSolarSystemID = s2.solarSystemID
-    join
-        regions r1
-    on
-        j.fromRegionID = r1.regionID
-    join
-        regions r2
-    on
-        j.toRegionID = r2.regionID
-    where
-        r1.regionName = $name
-        or
-        r2.regionName = $name
 `;
 
 const edgeData = `
@@ -95,7 +63,7 @@ const edgeData = `
     )
 `;
 
-export const regionConnections2 = `
+export const regionConnections = `
     ${edgeData}
     select
          fromX
@@ -104,6 +72,8 @@ export const regionConnections2 = `
         ,toX
         ,toY
         ,toZ
+        ,fromSolarSystemID
+        ,toSolarSystemID
     from
         data
     where
@@ -129,6 +99,9 @@ export const regionCoordinatesAndStatuses = `
         ,s.y
         ,s.z
         ,s.security
+        ,s.solarSystemID
+        ,s.constellationID
+        ,s.regionID
     from
         ids i
     join
@@ -136,3 +109,42 @@ export const regionCoordinatesAndStatuses = `
     on
         i.solarSystemID = s.solarSystemID
 `;
+
+export const systemsByConstellation = `
+    ${edgeData},
+    ids as (
+        select distinct
+              fromSolarSystemID as solarSystemID
+        from
+            data
+        union
+        select distinct
+             toSolarSystemID as solarSystemID
+        from
+            data
+    ),
+    final as (
+        select
+             s.solarSystemName
+            ,s.x 
+            ,s.y
+            ,s.z
+            ,s.security
+            ,s.solarSystemID
+            ,s.constellationID
+            ,s.regionID
+        from
+            ids i
+        join
+            systems s
+        on
+            i.solarSystemID = s.solarSystemID
+    )
+    select 
+         constellationID
+        ,json_group_array(solarSystemID) as systems
+    from
+        final
+    group by
+        constellationID
+`

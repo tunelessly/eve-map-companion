@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { ok, err, Result } from "neverthrow";
-import { allRegionNames, galaxyCoordinatesAndStatuses, regionCoordinatesAndStatuses, regionConnections2 as regionConnections } from "./sql/queries";
+import { allRegionNames, galaxyCoordinatesAndStatuses, regionCoordinatesAndStatuses, regionConnections } from "./sql/queries";
 import type { Database, SqlValue } from "sql.js";
 import type * as interfaces from './interfaces.js';
 
@@ -40,6 +40,10 @@ export class Galaxy {
         return this._regionNames;
     }
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // TODO: This can leave the database in the right format already.
+    // We just need to change the target data structure downstream.
+    ////////////////////////////////////////////////////////////////////////////////
     private row2CoordinatesAndStatuses(row: SqlValue[]): [string, coordinates3D, number] {
         const solarSystemName = row[0].valueOf() as string;
         const coords = { x: row[1].valueOf() as number, y: row[2].valueOf() as number, z: row[3].valueOf() as number };
@@ -59,6 +63,7 @@ export class Galaxy {
             { x: toX, y: toY, z: toZ }
         ];
     }
+    ////////////////////////////////////////////////////////////////////////////////
 
     public getGalaxyCoordinatesandStatuses(): [string, coordinates3D, number][] {
         const data = this._db.exec(galaxyCoordinatesAndStatuses);

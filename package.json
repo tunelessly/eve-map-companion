@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "make-map": "npx tsc src/main-node.ts --outDir build/ --resolveJsonModule --esModuleInterop --module nodenext --target es6 && node build/main-node.js",
+    "make-map": "npx tsc src/main-node2.ts --outDir build/ --resolveJsonModule --esModuleInterop --module nodenext --target es6 && node build/main-node2.js",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
@@ -17,15 +17,16 @@
     "@theatre/core": "^0.6.0",
     "@theatre/studio": "^0.6.0",
     "@tsconfig/svelte": "^3.0.0",
+    "@types/better-sqlite3": "^7.6.4",
     "@types/d3": "^7.4.0",
     "@types/d3-force": "^3.0.4",
     "@types/d3-scale": "^4.0.3",
     "@types/node": "^18.15.13",
     "@types/sql.js": "^1.4.4",
-    "@types/sqlite3": "^3.1.8",
     "@types/three": "^0.150.1",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.58.0",
+    "better-sqlite3": "^8.4.0",
     "d3": "^7.8.4",
     "d3-force": "^3.0.0",
     "d3-scale": "^4.0.2",
@@ -39,7 +40,6 @@
     "jaro-winkler-typescript": "^1.0.1",
     "neverthrow": "^6.0.0",
     "sql.js": "^1.8.0",
-    "sqlite3": "^5.1.6",
     "svelte": "^3.55.1",
     "svelte-check": "^2.10.3",
     "svelte-preprocess": "^5.0.3",
@@ -52,5 +52,6 @@
     "vite-plugin-live-reload": "^3.0.2",
     "vite-plugin-restart": "^0.3.1",
     "webcola": "^3.4.0"
-  }
+  },
+  "dependencies": {}
 }
