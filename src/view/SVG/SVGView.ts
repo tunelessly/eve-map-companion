@@ -152,7 +152,6 @@ export class SVGView implements ViewLike {
         }
 
         // Painter's algorithm
-        console.log("Linhas");
         G
             .selectAll("line")
             .data(connectionCoordinates)
@@ -165,7 +164,6 @@ export class SVGView implements ViewLike {
             .attr("y2", edge => String(edge.toY))
             ;
 
-        console.log("Nós");
         if (isInteractive) {
             G
                 .selectAll("text")
@@ -204,7 +202,6 @@ export class SVGView implements ViewLike {
 
 
         if (isInteractive) {
-            console.log("Rectângulo");
             // Bounding boxes don't exist before DOM interactions
             // So we must put this after they've happened
             G
