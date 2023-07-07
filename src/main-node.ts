@@ -8,6 +8,16 @@ const generateSubwayRepresentation = (db: Database.Database) => {
         .prepare(allRegionNames)
         .all();
 
+    // const regions = [{ regionName: "Aridia" }];
+
+    const simulation = cola.d3adaptor(d3)
+        .linkDistance(10)
+        .symmetricDiffLinkLengths(10)
+        .defaultNodeSize(100)
+        .avoidOverlaps(true)
+        .handleDisconnected(true)
+        ;
+
     regions
         .map(region => {
             const regionName = region["regionName"];
@@ -46,17 +56,11 @@ const generateSubwayRepresentation = (db: Database.Database) => {
                     };
                 });
 
-            const simulation = cola.d3adaptor(d3)
+            simulation
                 .nodes(nodes)
                 .links(links)
                 .groups(groups as any)
-                .linkDistance(10)
-                .symmetricDiffLinkLengths(10)
-                .avoidOverlaps(true)
-                .handleDisconnected(true)
-                .stop()
-                ;
-            simulation.start(5000);
+                .start(100);
 
             const subwaySystemInsert = db.prepare(`
                 insert into systemsSubway (

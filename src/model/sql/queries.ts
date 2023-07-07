@@ -201,9 +201,11 @@ export const regionConnectionsSubway = `
     ${edgeDataSubway}
     select
         json_object(
+            'fromName', fromSystemName, 
             'fromX', fromX,
             'fromY', fromY,
             'fromZ', fromZ,
+            'toName', toSystemName, 
             'toX', toX,
             'toY', toY,
             'toZ', toZ
@@ -230,6 +232,7 @@ export const regionCoordinatesAndStatusesSubway = `
     select
         json_object(
             'systemName', s.solarSystemName,
+            'solarSystemID', s.solarSystemID,
             'security', s.security,
             'x',s.x ,
             'y',s.y,
@@ -280,8 +283,10 @@ export const systemsByConstellationSubway = `
             i.solarSystemID = s.solarSystemID
     )
     select 
-         constellationID
-        ,json_group_array(solarSystemID) as systems
+        json_object(
+            'constellation', constellationID,
+            'leaves', json_group_array(solarSystemID)
+        ) as data
     from
         final
     group by

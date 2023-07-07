@@ -1,10 +1,7 @@
-import type { INode, IEdge } from "../model/interfaces";
+import type { IRegionDataCoordinates } from "../model/interfaces";
 
 export interface ViewLike {
-    update(
-        systemData: INode[],
-        connections: IEdge[],
-    ): void;
+    update(data: IRegionDataCoordinates): void;
     dispose(): void;
     destroy(): void;
     onWindowResize(): void;

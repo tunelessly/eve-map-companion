@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { Galaxy } from "./model/galaxy";
-    import { Result } from "neverthrow";
     import { graphDataPubsub, initialArgsPubsub } from "./utils/svelte-store";
     import SVGView from "./view/SVG/SVG.svelte";
     import Search from "./components/Search.svelte";
@@ -14,18 +13,10 @@
         const currentURL = new URL(window.location.toString());
         currentURL.searchParams.set("region", regionName);
         history.replaceState({}, "", currentURL.toString());
-        const systemDataResult = Galaxy.instance.getRegionCoordinatesandStatuses(regionName);
-        const connectionsResult = Galaxy.instance.getConnections(regionName);
-        Result.combine([systemDataResult, connectionsResult])
-            .map((data) => {
-                const systemData = data[0];
-                const connectionData = data[1];
-                graphDataPubsub.set({
-                    nodeData: systemData,
-                    edgeData: connectionData,
-                });
-            })
-            .mapErr(console.log);
+        Galaxy.instance
+            .getDataForRegion(regionName)
+            .map((data) => graphDataPubsub.set(data))
+            .mapErr(console.error);
     };
 
     const fromURLSearch = (
@@ -41,7 +32,6 @@
     };
 
     onMount(() => {
-        console.log("Fui montado");
         regionNames = Galaxy.instance.getAllRegionNames();
         const params = fromURLSearch(window.location.search);
         update(params.region);

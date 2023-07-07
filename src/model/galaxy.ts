@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { ok, err, Result } from "neverthrow";
-import { allRegionNames, regionCoordinatesAndStatusesSubway, regionConnectionsSubway } from "./sql/queries";
-import type { Database, SqlValue } from "sql.js";
+import { allRegionNames, regionCoordinatesAndStatusesSubway, regionConnectionsSubway, systemsByConstellationSubway } from "./sql/queries";
+import type { Database } from "sql.js";
 import type * as interfaces from './interfaces.js';
 
 export type coordinates3D = {
@@ -47,14 +47,19 @@ export class Galaxy {
             ;
     }
 
-    public getRegionCoordinatesandStatuses(regionName: string): Result<interfaces.INode[], string> {
+    private getRegionDataAs<T>(regionName: interfaces.RegionName, asFn: (arg: interfaces.IRegionDataCoordinates) => T): Result<T, string> {
         if (this.regionNames.find(x => x == regionName) !== undefined) {
-            const data = this.getRegionData(regionName, regionCoordinatesAndStatusesSubway) as interfaces.INode[];
-            if (data.length === 0) {
-                return err(`Region not found: ${regionName}`);
+            const nodes = this.getRegionData(regionName, regionCoordinatesAndStatusesSubway) as interfaces.INode[];
+            const edges = this.getRegionData(regionName, regionConnectionsSubway) as interfaces.IEdgeCoordinates[];
+            const groups = this.getRegionData(regionName, systemsByConstellationSubway) as interfaces.IGroup[];
+            const length = Math.max(nodes.length, edges.length, groups.length);
+            if (length === 0) {
+                return err(`Insufficient data produced for ${regionName}: ${nodes.length}, ${edges.length}, ${groups.length}`);
             }
             else {
-                return ok(data);
+                const data: interfaces.IRegionDataCoordinates = { nodes, edges, groups, regionName };
+                const retVal = asFn(data);
+                return ok(retVal);
             }
         }
         else {
@@ -62,18 +67,38 @@ export class Galaxy {
         }
     }
 
-    public getConnections(regionName: interfaces.RegionName): Result<interfaces.IEdge[], string> {
-        if (this.regionNames.find(x => x == regionName) !== undefined) {
-            const data = this.getRegionData(regionName, regionConnectionsSubway) as interfaces.IEdge[];
-            if (data.length === 0) {
-                return err(`Region not found: ${regionName}`);
-            }
-            else {
-                return ok(data);
-            }
+    public getDataForRegion(regionName: interfaces.RegionName): Result<interfaces.IRegionDataCoordinates, string> {
+        const asFN = x => x;
+        return this.getRegionDataAs(regionName, asFN);
+    }
+
+    public getDataForRegionIndices(regionName: interfaces.RegionName): Result<interfaces.IRegionDataIndices, string> {
+        const asFN = (data: interfaces.IRegionDataCoordinates): interfaces.IRegionDataIndices => {
+            const edges = data.edges
+                .map(connection => {
+                    const fromName = connection.fromName;
+                    const toName = connection.toName;
+                    const fromIndex = data.nodes.findIndex(s => s.systemName === fromName);
+                    const toIndex = data.nodes.findIndex(s => s.systemName === toName);
+                    return { source: fromIndex, target: toIndex };
+                });
+            const groups = data.groups
+                .map(constellation => {
+                    return {
+                        constellationID: constellation.constellationID,
+                        leaves: constellation.leaves
+                            .map((systemID: number): number => {
+                                return data.nodes.findIndex(s => s.solarSystemID === systemID)
+                            })
+                    }
+                });
+            return {
+                regionName: data.regionName,
+                nodes: data.nodes,
+                edges,
+                groups,
+            };
         }
-        else {
-            return err(`Could not find region: ${regionName}`);
-        }
+        return this.getRegionDataAs(regionName, asFN);
     }
 }

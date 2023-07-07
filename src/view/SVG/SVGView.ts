@@ -1,5 +1,5 @@
 import type { ViewLike } from "../viewlike";
-import type { INode, IEdge, ICoordinates3D } from "../../model/interfaces";
+import type { INode, IEdgeCoordinates, IRegionDataCoordinates } from "../../model/interfaces";
 import { HSV2RGB, sectoHSV } from "../utils/utils";
 import { jaroWinkler } from "jaro-winkler-typescript";
 import * as d3 from "d3";
@@ -11,7 +11,7 @@ export class SVGView implements ViewLike {
     private _SVG: d3.Selection<SVGSVGElement, undefined, null, undefined>;
     private _G: d3.Selection<d3.BaseType, undefined, null, undefined>;
     private _systemData: INode[];
-    private _connections: IEdge[];
+    private _connections: IEdgeCoordinates[];
     private _translationVec: number[];
     private _zoom: d3.ZoomBehavior<Element, unknown>;
     private _zoomScale: number;
@@ -61,19 +61,18 @@ export class SVGView implements ViewLike {
     }
 
     public update(
-        systemData: INode[],
-        connections: IEdge[],
+        data: IRegionDataCoordinates,
         isInteractive: boolean = false
     ): void {
-        this._systemData = systemData.reduce((acc, node) => { acc.push({ ...node }); return acc; }, []);
-        this._connections = connections.reduce((acc, edge) => { acc.push({ ...edge }); return acc; }, []);
-        this._systemNames = systemData.map(system => new String(system.systemName).toString());
+        this._systemData = data.nodes.reduce((acc, node) => { acc.push({ ...node }); return acc; }, []);
+        this._connections = data.edges.reduce((acc, edge) => { acc.push({ ...edge }); return acc; }, []);
+        this._systemNames = data.nodes.map(system => new String(system.systemName).toString());
         this.recreate(this.systemData, this.connections, isInteractive);
     }
 
     private recreate(
         systemData: INode[],
-        connections: IEdge[],
+        connections: IEdgeCoordinates[],
         isInteractive: boolean = false
     ): void {
         const viewboxDimensions = this.viewboxDimensions;
@@ -285,14 +284,6 @@ export class SVGView implements ViewLike {
             .attr("x", actualFuckingSquareCenterUserX)
             .attr("y", actualFuckingSquareCenterUserY)
             ;
-    }
-
-    private YFlipper = (coordinates: ICoordinates3D): ICoordinates3D => {
-        return {
-            x: coordinates.x,
-            y: -coordinates.y,
-            z: coordinates.z,
-        }
     }
 
     private computeBoundingBox = (coordinates: number[][]): {
