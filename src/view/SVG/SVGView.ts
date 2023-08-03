@@ -1,5 +1,4 @@
 import type { ViewLike } from "../viewlike";
-import type { INode, IEdgeCoordinates, IRegionDataCoordinates } from "../../model/interfaces";
 import { HSV2RGB, sectoHSV } from "../utils/utils";
 import { jaroWinkler } from "jaro-winkler-typescript";
 import * as d3 from "d3";
@@ -7,37 +6,33 @@ import type { Writable } from "svelte/store";
 import type { Transform, UserCoordinates } from "../../utils/svelte-store"
 
 export class SVGView implements ViewLike {
-    private readonly _rootHTMLElement: HTMLElement;
-    private _SVG: d3.Selection<SVGSVGElement, undefined, null, undefined>;
-    private _G: d3.Selection<d3.BaseType, undefined, null, undefined>;
-    private _systemData: INode[];
-    private _connections: IEdgeCoordinates[];
-    private _translationVec: number[];
-    private _zoom: d3.ZoomBehavior<Element, unknown>;
-    private _zoomScale: number;
-    private _systemNames: string[] = [];
-    private _boundingBox: {
-        corner1: [number, number, number],
-        corner2: [number, number, number],
-        center: [number, number, number],
+    protected readonly _rootHTMLElement: HTMLElement;
+    protected _SVG: d3.Selection<SVGSVGElement, unknown, null, undefined>;
+    protected _G: d3.Selection<d3.BaseType, unknown, null, undefined>;
+    protected _translationVec: number[];
+    protected _zoom: d3.ZoomBehavior<Element, unknown>;
+    protected _zoomScale: number;
+    protected _systemNames: string[] = [];
+    protected _boundingBox: {
+        corner1: [number, number],
+        corner2: [number, number],
+        center: [number, number],
     };
-    private readonly _viewboxDimensions = [100, 100];
-    private _transformListener: Writable<Transform>;
-    private _clickListener: Writable<UserCoordinates>;
+    protected readonly _viewboxDimensions = [100, 100];
+    protected _transformListener: Writable<Transform>;
+    protected _clickListener: Writable<UserCoordinates>;
 
-    private get rootHTMLElement() { return this._rootHTMLElement; }
-    private get SVG() { return this._SVG; }
-    private get G() { return this._G; }
-    private get systemData() { return this._systemData; }
-    private get connections() { return this._connections; }
-    private get translationVec() { return this._translationVec; }
-    private get zoom() { return this._zoom; }
-    private get names() { return this._systemNames; }
-    private get boundingBox() { return this._boundingBox; }
-    private get viewboxDimensions() { return this._viewboxDimensions; }
-    private get transformListener() { return this._transformListener; }
-    private get clickListener() { return this._clickListener; }
-    private get zoomScale() { return this._zoomScale; }
+    protected get rootHTMLElement() { return this._rootHTMLElement; }
+    protected get SVG() { return this._SVG; }
+    protected get G() { return this._G; }
+    protected get translationVec() { return this._translationVec; }
+    protected get zoom() { return this._zoom; }
+    protected get names() { return this._systemNames; }
+    protected get boundingBox() { return this._boundingBox; }
+    protected get viewboxDimensions() { return this._viewboxDimensions; }
+    protected get transformListener() { return this._transformListener; }
+    protected get clickListener() { return this._clickListener; }
+    protected get zoomScale() { return this._zoomScale; }
 
 
     constructor(rootHTMLElement: HTMLElement) {
@@ -60,165 +55,76 @@ export class SVGView implements ViewLike {
         this._clickListener = listener;
     }
 
-    public update(
-        data: IRegionDataCoordinates,
-        isInteractive: boolean = false
-    ): void {
-        this._systemData = data.nodes.reduce((acc, node) => { acc.push({ ...node }); return acc; }, []);
-        this._connections = data.edges.reduce((acc, edge) => { acc.push({ ...edge }); return acc; }, []);
-        this._systemNames = data.nodes.map(system => new String(system.systemName).toString());
-        this.recreate(this.systemData, this.connections, isInteractive);
+    public update(regionName: string, isInteractive: boolean = false): void {
+        d3.svg(`${regionName}.svg`)
+            .then(svgDocument => {
+                const svgElement: SVGSVGElement = <SVGSVGElement><any>svgDocument.documentElement;
+                const SVG = d3.select(svgElement);
+                const G = SVG.select('#graph0');
+                SVG.attr("width", null).attr("height", null);
+                this._SVG = SVG;
+                this._G = G;
+
+                const initialViewBox = (<SVGSVGElement>SVG.node()).viewBox.baseVal;
+                const initialTransform = this.parseTransformList((<SVGSVGElement>G.node()).transform.baseVal);
+                const initiald3Transform = d3.zoomIdentity
+                    .translate(initialTransform.translate.x, initialTransform.translate.y)
+                    .scale(initialTransform.scale.x);
+
+                this._boundingBox = {
+                    corner1: [0, 0],
+                    corner2: [initialViewBox.width, initialViewBox.height],
+                    center: [initialViewBox.width / 2, initialViewBox.height / 2],
+                };
+
+                console.dir(initialTransform);
+
+                const zoom = d3.zoom()
+                    .scaleExtent([0.5, 8])
+                    // .translateExtent([
+                    //     [initialViewBox.x, initialViewBox.y],
+                    //     // [initialViewBox.width, initialViewBox.height]
+                    //     [10000, 10000]
+                    // ])
+                    .on('zoom', this.zoomed)
+                    .on('end', this.zoomEnd);
+
+                SVG.call(zoom).call(zoom.transform, initiald3Transform);
+                this.replaceOrAppend(svgElement);
+            })
+            .catch(console.error);
+
     }
 
-    private recreate(
-        systemData: INode[],
-        connections: IEdgeCoordinates[],
-        isInteractive: boolean = false
-    ): void {
-        const viewboxDimensions = this.viewboxDimensions;
-        const systemCoordinates = systemData
-            .map(system => {
-                system.y = -system.y;
-                return system;
-            })
-            .map(system => {
-                return {
-                    ...system,
-                    ...HSV2RGB(sectoHSV(system.security)),
-                };
-            });
-        const connectionCoordinates = connections
-            .map(edge => {
-                edge.fromY = -edge.fromY;
-                edge.toY = -edge.toY;
-                return edge;
-            });
-
-
-        const boundingBox = this.computeBoundingBox(systemCoordinates.map(
-            system => {
-                return [system.x, system.y, system.z];
+    private parseTransformList(transformList: SVGTransformList) {
+        const retVal = { scale: { x: 1, y: 1 }, translate: { x: 0, y: 0 } };
+        for (let transform of transformList) {
+            const m = transform.matrix;
+            switch (transform.type) {
+                case SVGTransform.SVG_TRANSFORM_SCALE: {
+                    retVal["scale"] = { x: m.a, y: m.d };
+                    break;
+                }
+                case SVGTransform.SVG_TRANSFORM_TRANSLATE: {
+                    retVal["translate"] = { x: m.e, y: m.f };
+                    break;
+                }
+                case SVGTransform.SVG_TRANSFORM_ROTATE:
+                case SVGTransform.SVG_TRANSFORM_UNKNOWN:
+                case SVGTransform.SVG_TRANSFORM_MATRIX:
+                default:
+                    break;
             }
-        ));
-        this._boundingBox = boundingBox;
-        const center = boundingBox.center;
-        const translationVec = [(viewboxDimensions[0] / 2) - center[0], (viewboxDimensions[1] / 2) - center[1]];
-        this._translationVec = translationVec;
-        const scaleExtent: [number, number] = [0.5, 8];
-
-        const svg = d3.create("svg");
-        const G = svg.append("svg:g");
-        this._SVG = svg;
-        this._G = G;
-
-        svg
-            .attr("xmlns", "http://www.w3.org/2000/svg")
-            .attr("id", "SVGSubway")
-            .attr("preserveAspectRatio", "xMidYMid meet")
-            ;
-
-        if (isInteractive) {
-            const transformParams = { translate: [center[0], center[1]], scale: 1 };
-            const d3transform = d3.zoomIdentity.translate(transformParams.translate[0], transformParams.translate[1]).scale(transformParams.scale);
-            const zoom = d3.zoom()
-                .scaleExtent(scaleExtent)
-                .translateExtent([[boundingBox.corner1[0] * 1.20, boundingBox.corner1[1] * 1.20], [boundingBox.corner2[0] * 1.20, boundingBox.corner2[1] * 1.20]])
-                .on("zoom", this.zoomed)
-                .on("end", this.zoomEnd);
-            this._zoom = zoom;
-            svg
-                .attr("viewBox", [Math.round(center[0]), Math.round(center[1]), ...viewboxDimensions])
-                .call(zoom)
-                .call(zoom.transform, d3transform);
         }
-        else {
-            const c1 = boundingBox.corner1;
-            const c2 = boundingBox.corner2;
-            const h = Math.sqrt((c2[0] - c1[0]) ** 2);
-            const v = Math.sqrt((c2[1] - c1[1]) ** 2);
-            const longestSide = Math.max(h, v);
-            svg.attr("viewBox", [Math.round(c1[0]), Math.round(c1[1]), Math.round(longestSide), Math.round(longestSide)]);
-            svg.on("pointerdown", event => {
-                // TODO: This is MVP tier 
-                // It'll need replacing with a proper solution 
-                if (this.clickListener === undefined) return;
-                const coords = d3.pointer(event);
-                this.clickListener.set({
-                    x: coords[0],
-                    y: coords[1],
-                });
-            });
-        }
+        return retVal;
+    }
 
-        // Painter's algorithm
-        G
-            .selectAll("line")
-            .data(connectionCoordinates)
-            .enter()
-            .append("line")
-            .attr("class", "svg-line")
-            .attr("x1", edge => String(edge.fromX))
-            .attr("y1", edge => String(edge.fromY))
-            .attr("x2", edge => String(edge.toX))
-            .attr("y2", edge => String(edge.toY))
-            ;
-
-        if (isInteractive) {
-            G
-                .selectAll("text")
-                .data(systemCoordinates)
-                .enter()
-                .append("text")
-                .attr("class", "svg-text")
-                .attr("x", system => String(system.x))
-                .attr("y", system => String(system.y))
-                .attr("dominant-baseline", "middle")
-                .text(system => system.systemName)
-                .attr("id", system => `system-${system.systemName}`)
-                ;
-        } else {
-            G
-                .selectAll("circle")
-                .data(systemCoordinates)
-                .enter()
-                .append("circle")
-                .attr("class", "svg-circle")
-                .attr("cx", system => String(system.x))
-                .attr("cy", system => String(system.y))
-                .attr("r", 3)
-                .attr("id", d => `system-${d.systemName}`)
-                ;
-        }
-
-
-        const previousSVG =
-            this.rootHTMLElement.getElementsByTagName(svg.node().tagName)[0];
-        if (previousSVG === undefined) {
-            this.rootHTMLElement.appendChild(svg.node());
-        } else {
-            this.rootHTMLElement.replaceChild(svg.node(), previousSVG);
-        }
-
-
-        if (isInteractive) {
-            // Bounding boxes don't exist before DOM interactions
-            // So we must put this after they've happened
-            G
-                .selectAll("text")
-                .each(function (system: any, index) {
-                    const dimensions = (this as any).getBBox();
-                    G.insert("rect", "text")
-                        .attr("class", "svg-node")
-                        .attr("x", String(dimensions.x))
-                        .attr("y", String(dimensions.y))
-                        .attr("rx", 1)
-                        .attr("ry", 1)
-                        .attr("width", String(dimensions.width * 1.05))
-                        .attr("height", String(dimensions.height * 1.05))
-                        .style("stroke", () => `rgb(${system.r},${system.g},${system.b})`)
-                })
-                ;
-        }
+    private replaceOrAppend(element: SVGSVGElement) {
+        const previousSVG = this.rootHTMLElement.getElementsByTagName('svg')[0];
+        if (previousSVG === undefined)
+            this.rootHTMLElement.appendChild(element);
+        else
+            this.rootHTMLElement.replaceChild(element, previousSVG);
     }
 
     public applyTransform(transformStr: string) {
@@ -286,7 +192,7 @@ export class SVGView implements ViewLike {
             ;
     }
 
-    private computeBoundingBox = (coordinates: number[][]): {
+    protected computeBoundingBox = (coordinates: number[][]): {
         corner1: [number, number, number],
         corner2: [number, number, number],
         center: [number, number, number]
@@ -312,7 +218,7 @@ export class SVGView implements ViewLike {
         });
     }
 
-    private zoomed = (event) => {
+    protected zoomed = (event) => {
         const { transform } = event;
         const screenWidth = this.rootHTMLElement.clientWidth;
         const screenHeight = this.rootHTMLElement.clientHeight;
@@ -322,7 +228,7 @@ export class SVGView implements ViewLike {
         this._zoomScale = transform.k;
     }
 
-    private zoomEnd = (event) => {
+    protected zoomEnd = (event) => {
         this.zoomed(event);
         const { transform } = event;
         const serialized = btoa(JSON.stringify(transform));
@@ -331,7 +237,7 @@ export class SVGView implements ViewLike {
         history.replaceState({}, '', currentURL.toString());
     }
 
-    private transformParser = (transform: string): { translate: number[], scale: number } => {
+    protected transformParser = (transform: string): { translate: number[], scale: number } => {
         try {
             const decoded = JSON.parse(atob(transform));
             return {

@@ -1,5 +1,4 @@
 import { writable, type Writable } from 'svelte/store';
-import type { IRegionDataCoordinates } from "../model/interfaces";
 
 export type Search = {
     systemName: string;
@@ -23,6 +22,6 @@ export type UserCoordinates = {
 
 export const systemNameSearchPubSub: Writable<Search> = writable();
 export const mapDragPubSub: Writable<Transform> = writable();
-export const graphDataPubsub: Writable<IRegionDataCoordinates> = writable();
+export const regionChangedPubsub: Writable<string> = writable();
 export const initialArgsPubsub: Writable<InitialArgs> = writable();
 export const mapClickPubSub: Writable<UserCoordinates> = writable();

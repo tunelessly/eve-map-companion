@@ -52,14 +52,15 @@ const generateSubwayRepresentation = (db: Database.Database) => {
                         leaves: constellation.systems
                             .map((systemID: number): number => {
                                 return nodes.findIndex(s => s.solarSystemID === systemID)
-                            })
+                            }),
+                        padding: 1
                     };
                 });
 
             simulation
                 .nodes(nodes)
                 .links(links)
-                .groups(groups as any)
+                .groups(groups)
                 .start(100);
 
             const subwaySystemInsert = db.prepare(`

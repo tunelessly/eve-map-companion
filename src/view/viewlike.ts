@@ -1,8 +1,5 @@
-import type { IRegionDataCoordinates } from "../model/interfaces";
-
 export interface ViewLike {
-    update(data: IRegionDataCoordinates): void;
-    dispose(): void;
+    update(regionName: string): void;
     destroy(): void;
     onWindowResize(): void;
 }

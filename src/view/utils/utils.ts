@@ -43,9 +43,6 @@ export const HSV2RGB = (hsv: HSV): RGB => {
 }
 
 export const sectoHSV = (securityStatus: number): HSV => {
-    // security status is a number that ranges from -1 to 1
-    // values less than 0 will be treated as 0
-
     const mSecurityStatus = securityStatus < 0 ? 0 : securityStatus;
 
     // By messing around with a color picker that displays HSV
@@ -54,6 +51,13 @@ export const sectoHSV = (securityStatus: number): HSV => {
     // This should roughly correspond to HSV 180/100/100
     // and thus the security status scales the hue between 180 and 0.
 
-    const hue: number = Math.round((180 * mSecurityStatus));
+    let hue: number;
+    if (securityStatus < 0) {
+        hue = Math.round(270 - mSecurityStatus * 90);
+    }
+    else {
+        hue = Math.round(180 * mSecurityStatus);
+    }
+
     return { h: hue, s: 100, v: 100 }
 }

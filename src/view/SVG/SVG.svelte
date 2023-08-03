@@ -2,12 +2,12 @@
     import {
         systemNameSearchPubSub,
         mapDragPubSub,
-        graphDataPubsub,
+        regionChangedPubsub,
         initialArgsPubsub,
         mapClickPubSub,
     } from "../../utils/svelte-store";
     import { onMount } from "svelte";
-    import { SVGView } from "./SVGView.js";
+    import { SVGView } from "./SVGView";
 
     let root: HTMLDivElement;
     let bigMapDiv: HTMLDivElement;
@@ -33,23 +33,21 @@
         svgViewBig.centerOnCoords(coordinates.x, coordinates.y);
     });
 
-    graphDataPubsub.subscribe((data) => {
+    regionChangedPubsub.subscribe((data) => {
         if (svgViewBig === undefined || svgViewMini === undefined) return;
-        console.log("Drawing minimap");
         svgViewMini.update(data);
-        console.log("Drawing maximap");
         svgViewBig.update(data, true);
     });
 
     initialArgsPubsub.subscribe((data) => {
-        if (svgViewBig === undefined || svgViewMini === undefined) return;
-        svgViewBig.applyTransform(data.args);
+        if (svgViewBig === undefined) return;
+        // svgViewBig.applyTransform(data.args);
     });
 
     onMount(() => {
-        svgViewMini = new SVGView(miniMapDiv);
         svgViewBig = new SVGView(bigMapDiv);
         svgViewBig.addTransformListener(mapDragPubSub);
+        svgViewMini = new SVGView(miniMapDiv);
         svgViewMini.addClickListener(mapClickPubSub);
     });
 </script>
@@ -98,7 +96,7 @@
 
     #SVGBigMap :global(.svg-line) {
         stroke: whitesmoke;
-        stroke-width: 0.5;
+        stroke-width: 0.25;
         stroke-linejoin: round;
     }
 
