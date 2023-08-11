@@ -71,25 +71,26 @@ export class SVGView implements ViewLike {
                     .translate(initialTransform.translate.x, initialTransform.translate.y)
                     .scale(initialTransform.scale.x);
 
-                this._boundingBox = {
-                    corner1: [0, 0],
-                    corner2: [initialViewBox.width, initialViewBox.height],
-                    center: [initialViewBox.width / 2, initialViewBox.height / 2],
-                };
-
-                console.dir(initialTransform);
+                const coords = SVG.selectAll("text")
+                    .nodes()
+                    .map(
+                        (data: SVGTextElement) => {
+                            return { x: data.x.baseVal[0].value, y: data.y.baseVal[0].value }
+                        }
+                    );
+                this._boundingBox = this.computeBoundingBox(coords);
+                console.dir("texto", this.boundingBox);
 
                 const zoom = d3.zoom()
                     .scaleExtent([0.5, 8])
-                    // .translateExtent([
-                    //     [initialViewBox.x, initialViewBox.y],
-                    //     // [initialViewBox.width, initialViewBox.height]
-                    //     [10000, 10000]
-                    // ])
+                    .translateExtent([
+                        this.boundingBox.corner1, this.boundingBox.corner2
+                    ])
                     .on('zoom', this.zoomed)
                     .on('end', this.zoomEnd);
 
-                SVG.call(zoom).call(zoom.transform, initiald3Transform);
+                SVG.call(zoom);
+                SVG.call(zoom.transform, initiald3Transform);
                 this.replaceOrAppend(svgElement);
             })
             .catch(console.error);
@@ -192,29 +193,26 @@ export class SVGView implements ViewLike {
             ;
     }
 
-    protected computeBoundingBox = (coordinates: number[][]): {
-        corner1: [number, number, number],
-        corner2: [number, number, number],
-        center: [number, number, number]
+    protected computeBoundingBox = (coordinates: {x: number, y: number}[]): {
+        corner1: [number, number],
+        corner2: [number, number],
+        center: [number, number]
     } => {
         return coordinates.reduce((acc, val) => {
-            const x = val[0];
-            const y = val[1];
-            const z = val[2];
+            const x = val.x;
+            const y = val.y;
             const corner1 = acc.corner1;
             const corner2 = acc.corner2;
             if (x <= corner1[0]) corner1[0] = x;
             if (y <= corner1[1]) corner1[1] = y;
-            if (z <= corner1[2]) corner1[2] = z;
             if (x >= corner2[0]) corner2[0] = x;
             if (y >= corner2[1]) corner2[1] = y;
-            if (z >= corner2[2]) corner2[2] = z;
-            acc.center = [(corner2[0] + corner1[0]) / 2, (corner2[1] + corner1[1]) / 2, (corner2[2] + corner1[2]) / 2];
+            acc.center = [(corner2[0] + corner1[0]) / 2, (corner2[1] + corner1[1]) / 2];
             return acc;
         }, {
-            corner1: [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
-            corner2: [Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
-            center: [0, 0, 0]
+            corner1: [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+            corner2: [Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
+            center: [0, 0]
         });
     }
 
