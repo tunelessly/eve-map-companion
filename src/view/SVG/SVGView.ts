@@ -59,39 +59,42 @@ export class SVGView implements ViewLike {
         d3.svg(`${regionName}.svg`)
             .then(svgDocument => {
                 const svgElement: SVGSVGElement = <SVGSVGElement><any>svgDocument.documentElement;
+                this.replaceOrAppend(svgElement);
                 const SVG = d3.select(svgElement);
                 const G = SVG.select('#graph0');
+                const initialTransform = this.parseTransformList((<SVGSVGElement>G.node()).transform.baseVal);
                 SVG.attr("width", null).attr("height", null);
+                const originalViewbox = SVG.node().viewBox.baseVal;
+                const largestViewBoxDimension = Math.max(originalViewbox.width, originalViewbox.height)
+                SVG.attr("viewBox", [0, 0, largestViewBoxDimension, largestViewBoxDimension]);
                 this._SVG = SVG;
                 this._G = G;
-
-                const initialViewBox = (<SVGSVGElement>SVG.node()).viewBox.baseVal;
-                const initialTransform = this.parseTransformList((<SVGSVGElement>G.node()).transform.baseVal);
-                const initiald3Transform = d3.zoomIdentity
-                    .translate(initialTransform.translate.x, initialTransform.translate.y)
-                    .scale(initialTransform.scale.x);
 
                 const coords = SVG.selectAll("text")
                     .nodes()
                     .map(
                         (data: SVGTextElement) => {
-                            return { x: data.x.baseVal[0].value, y: data.y.baseVal[0].value }
+                            return { x: data.x.baseVal[0].value, y: data.y.baseVal[0].value };
                         }
                     );
                 this._boundingBox = this.computeBoundingBox(coords);
-                console.dir("texto", this.boundingBox);
 
                 const zoom = d3.zoom()
                     .scaleExtent([0.5, 8])
                     .translateExtent([
-                        this.boundingBox.corner1, this.boundingBox.corner2
+                        [0 - initialTransform.translate.x, 0 - initialTransform.translate.y], 
+                        [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y]
                     ])
                     .on('zoom', this.zoomed)
                     .on('end', this.zoomEnd);
 
+
+                const initiald3Transform = d3.zoomIdentity
+                    .translate(initialTransform.translate.x, initialTransform.translate.y)
+                    .scale(initialTransform.scale.x);
+
                 SVG.call(zoom);
                 SVG.call(zoom.transform, initiald3Transform);
-                this.replaceOrAppend(svgElement);
             })
             .catch(console.error);
 
@@ -162,6 +165,7 @@ export class SVGView implements ViewLike {
     }
 
     public minimapRect(t: Transform) {
+        // Estoura volta e meia
         const center = this.boundingBox.center;
         const viewboxDimensions = this.viewboxDimensions;
         const transform = d3.zoomIdentity.translate(t.x, t.y).scale(t.k).invert([center[0], center[1]]);
@@ -193,7 +197,7 @@ export class SVGView implements ViewLike {
             ;
     }
 
-    protected computeBoundingBox = (coordinates: {x: number, y: number}[]): {
+    protected computeBoundingBox = (coordinates: { x: number, y: number }[]): {
         corner1: [number, number],
         corner2: [number, number],
         center: [number, number]
