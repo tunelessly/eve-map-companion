@@ -62,8 +62,9 @@ export class SVGView implements ViewLike {
                 this.replaceOrAppend(svgElement);
                 const SVG = d3.select(svgElement);
                 const G = SVG.select('#graph0');
+                G.select("polygon").remove();
                 const initialTransform = this.parseTransformList((<SVGSVGElement>G.node()).transform.baseVal);
-                SVG.attr("width", null).attr("height", null);
+                SVG.attr("width", null).attr("height", null).attr("id", "SVGRoot");
                 const originalViewbox = SVG.node().viewBox.baseVal;
                 const largestViewBoxDimension = Math.max(originalViewbox.width, originalViewbox.height)
                 SVG.attr("viewBox", [0, 0, largestViewBoxDimension, largestViewBoxDimension]);
@@ -80,9 +81,9 @@ export class SVGView implements ViewLike {
                 this._boundingBox = this.computeBoundingBox(coords);
 
                 const zoom = d3.zoom()
-                    .scaleExtent([0.5, 8])
+                    .scaleExtent([1, 8])
                     .translateExtent([
-                        [0 - initialTransform.translate.x, 0 - initialTransform.translate.y], 
+                        [0 - initialTransform.translate.x, 0 - initialTransform.translate.y],
                         [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y]
                     ])
                     .on('zoom', this.zoomed)
@@ -93,11 +94,17 @@ export class SVGView implements ViewLike {
                     .translate(initialTransform.translate.x, initialTransform.translate.y)
                     .scale(initialTransform.scale.x);
 
-                SVG.call(zoom);
-                SVG.call(zoom.transform, initiald3Transform);
+                if(isInteractive){
+                    this.addZoomBehavior(zoom, initiald3Transform);
+                }
             })
             .catch(console.error);
 
+    }
+
+    private addZoomBehavior(zoom: d3.ZoomBehavior<Element, unknown>, initialTransform: d3.ZoomTransform) {
+        this.SVG.call(zoom);
+        this.SVG.call(zoom.transform, initialTransform);
     }
 
     private parseTransformList(transformList: SVGTransformList) {
@@ -190,7 +197,7 @@ export class SVGView implements ViewLike {
             .attr("width", widthUser)
             .attr("height", heightUser)
             .attr('stroke', 'red')
-            .attr('stroke-width', 2)
+            .attr('stroke-width', 6)
             .attr('fill', 'none')
             .attr("x", actualFuckingSquareCenterUserX)
             .attr("y", actualFuckingSquareCenterUserY)
