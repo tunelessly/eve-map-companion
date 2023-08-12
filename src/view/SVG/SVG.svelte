@@ -52,15 +52,21 @@
     });
 </script>
 
-<div bind:this={root} id="SVGRoot">
+<div bind:this={root} id="SVGRootDiv">
     <div bind:this={miniMapDiv} id="SVGMiniMap" />
     <div bind:this={bigMapDiv} id="SVGBigMap" />
 </div>
 
 <style>
-    #SVGRoot {
+    #SVGRootDiv {
         display: flex;
         flex-direction: row;
+        width: 100%;
+        height: 100%;
+    }
+
+    :global(#SVGBigMap #SVGRoot),
+    :global(#SVGMiniMap #SVGRoot) {
         width: 100%;
         height: 100%;
     }
@@ -77,43 +83,39 @@
         overflow: hidden;
     }
 
-    #SVGBigMap :global(#SVGSubway),
-    #SVGMiniMap :global(#SVGSubway) {
-        width: 100%;
-        height: 100%;
-    }
-
-    #SVGBigMap :global(#SVGSubway) {
+    :global(#SVGBigMap), :global(#SVGMiniMap) {
         cursor: move;
     }
 
-    #SVGBigMap :global(.svg-text) {
+    :global(#SVGBigMap g text) {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 1.7vh;
         text-anchor: middle;
-        font-size: 2pt;
         cursor: pointer;
     }
 
-    #SVGBigMap :global(.svg-line) {
+    :global(#SVGBigMap g path) {
         stroke: whitesmoke;
-        stroke-width: 0.25;
-        stroke-linejoin: round;
+        stroke-width: 1.5;
     }
 
-    #SVGBigMap :global(.svg-node) {
+    :global(#SVGBigMap g polygon, #SVGBigMap g ellipse) {
         cursor: pointer;
         fill: white;
         stroke-width: 0.3;
     }
 
-    #SVGMiniMap :global(.svg-line) {
-        stroke: whitesmoke;
-        stroke-width: 1;
-        stroke-linejoin: round;
-    }
-
-    #SVGMiniMap :global(.svg-circle) {
+    :global(#SVGMiniMap g polygon, #SVGMiniMap g ellipse) {
         fill: rgb(0, 205, 219);
         stroke: black;
+    }
+
+    :global(#SVGMiniMap g path) {
+        stroke: whitesmoke;
+        stroke-width: 5;
+    }
+
+    :global(#SVGMiniMap g text){
+        display: none;
     }
 </style>
