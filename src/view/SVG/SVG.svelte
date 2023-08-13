@@ -65,12 +65,6 @@
         height: 100%;
     }
 
-    :global(#SVGBigMap #SVGRoot),
-    :global(#SVGMiniMap #SVGRoot) {
-        width: 100%;
-        height: 100%;
-    }
-
     #SVGMiniMap {
         width: 15%;
         height: 100%;
@@ -78,13 +72,13 @@
 
     #SVGBigMap {
         width: 85%;
-        height: 100%;
+        height: fit-content;
         text-align: center;
-        overflow: hidden;
     }
-
-    :global(#SVGBigMap), :global(#SVGMiniMap) {
-        cursor: move;
+    
+    :global(#SVGRoot) {
+        width: 100%;
+        height: 100%;
     }
 
     :global(#SVGBigMap g text) {
@@ -117,5 +111,11 @@
 
     :global(#SVGMiniMap g text){
         display: none;
+    }
+
+    :global(#svg-minimap-rect){
+        stroke: rgb(229, 255, 0);
+        stroke-width: 10;
+        fill: none;
     }
 </style>

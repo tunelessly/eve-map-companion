@@ -60,15 +60,21 @@ export class SVGView implements ViewLike {
             .then(svgDocument => {
                 const svgElement: SVGSVGElement = <SVGSVGElement><any>svgDocument.documentElement;
                 this.replaceOrAppend(svgElement);
+
                 const SVG = d3.select(svgElement);
                 const G = SVG.select('#graph0');
-                G.select("polygon").remove();
                 const initialTransform = this.parseTransformList((<SVGSVGElement>G.node()).transform.baseVal);
-                SVG.attr("width", null).attr("height", null).attr("id", "SVGRoot");
+                SVG
+                    .attr("width", null)
+                    .attr("height", null)
+                    .attr("id", "SVGRoot")
+                    .attr("preserveAspectRatio", "xMidYMid meet")
+                ;
                 const originalViewbox = SVG.node().viewBox.baseVal;
-                const largestViewBoxDimension = Math.max(originalViewbox.width, originalViewbox.height)
-                SVG.attr("viewBox", [0, 0, largestViewBoxDimension, largestViewBoxDimension]);
-                this._viewboxDimensions = [largestViewBoxDimension, largestViewBoxDimension];
+                this._viewboxDimensions = [originalViewbox.width, originalViewbox.height];
+
+                G.select("polygon").remove();
+
                 this._SVG = SVG;
                 this._G = G;
 
@@ -173,7 +179,7 @@ export class SVGView implements ViewLike {
     }
 
     public minimapRect(t: Transform) {
-        // Estoura volta e meia
+        // Estoura volta e meia pq acha que this.SVG é undefined
         const SVGViewBox = this.SVG.node().viewBox.baseVal;
         const SVGBBox = this.SVG.node().getBoundingClientRect()
 
@@ -187,15 +193,14 @@ export class SVGView implements ViewLike {
         const dx = t.x / t.k;
         const dy = t.y / t.k;
 
+        console.dir("removing rect");
         this.G.select("#svg-minimap-rect").remove();
+        console.dir("adding rect");
         this.G
             .append("rect")
             .attr("id", "svg-minimap-rect")
             .attr("width", SVGBBox.width / screentoUserRatioX / t.k)
             .attr("height", SVGBBox.height / screentoUserRatioY / t.k)
-            .attr('stroke', 'red')
-            .attr('stroke-width', 6)
-            .attr('fill', 'none')
             .attr('transform', `translate(${-dx},${-dy})`)
             ;
     }
