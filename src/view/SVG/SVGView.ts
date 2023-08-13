@@ -18,7 +18,7 @@ export class SVGView implements ViewLike {
         corner2: [number, number],
         center: [number, number],
     };
-    protected readonly _viewboxDimensions = [100, 100];
+    protected _viewboxDimensions = [100, 100];
     protected _transformListener: Writable<Transform>;
     protected _clickListener: Writable<UserCoordinates>;
 
@@ -68,17 +68,18 @@ export class SVGView implements ViewLike {
                 const originalViewbox = SVG.node().viewBox.baseVal;
                 const largestViewBoxDimension = Math.max(originalViewbox.width, originalViewbox.height)
                 SVG.attr("viewBox", [0, 0, largestViewBoxDimension, largestViewBoxDimension]);
+                this._viewboxDimensions = [largestViewBoxDimension, largestViewBoxDimension];
                 this._SVG = SVG;
                 this._G = G;
 
-                const coords = SVG.selectAll("text")
-                    .nodes()
-                    .map(
-                        (data: SVGTextElement) => {
-                            return { x: data.x.baseVal[0].value, y: data.y.baseVal[0].value };
-                        }
-                    );
-                this._boundingBox = this.computeBoundingBox(coords);
+                const corner1: [number, number] = [0 - initialTransform.translate.x, 0 - initialTransform.translate.y];
+                const corner2: [number, number] = [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y];
+                const center: [number, number] = [(corner1[0] + corner2[0]) / 2, (corner1[1] + corner2[1]) / 2];
+                this._boundingBox = {
+                    corner1,
+                    corner2,
+                    center,
+                };
 
                 const zoom = d3.zoom()
                     .scaleExtent([1, 8])
@@ -94,7 +95,7 @@ export class SVGView implements ViewLike {
                     .translate(initialTransform.translate.x, initialTransform.translate.y)
                     .scale(initialTransform.scale.x);
 
-                if(isInteractive){
+                if (isInteractive) {
                     this.addZoomBehavior(zoom, initiald3Transform);
                 }
             })
@@ -173,34 +174,29 @@ export class SVGView implements ViewLike {
 
     public minimapRect(t: Transform) {
         // Estoura volta e meia
-        const center = this.boundingBox.center;
-        const viewboxDimensions = this.viewboxDimensions;
-        const transform = d3.zoomIdentity.translate(t.x, t.y).scale(t.k).invert([center[0], center[1]]);
-        const widthScreen = (this.G.node() as SVGGElement).getBoundingClientRect().width;
-        const heightScreen = (this.G.node() as SVGGElement).getBoundingClientRect().height;
-        const squareScreen = Math.min(widthScreen, heightScreen);
-        const ScreenToUserRatio = squareScreen / this.viewboxDimensions[0];
-        const x = transform[0] + viewboxDimensions[0] / 2 / t.k;
-        const y = transform[1] + viewboxDimensions[1] / 2 / t.k;
-        // TODO: Hardcoded minimum aspect ratio only works because
-        // the SVG's hardcoded aspect ratio is 1:1
-        const widthUser = (squareScreen * Math.max(t.aspectRatio, 1)) / ScreenToUserRatio / t.k;
-        const heightUser = (squareScreen * 1 / Math.min(t.aspectRatio, 1)) / ScreenToUserRatio / t.k;
+        const SVGViewBox = this.SVG.node().viewBox.baseVal;
+        const SVGBBox = this.SVG.node().getBoundingClientRect()
 
-        // Fucking stupid top left corner idiocy
-        const actualFuckingSquareCenterUserX = x - ((squareScreen * Math.max(t.aspectRatio, 1)) / ScreenToUserRatio / 2) / t.k;
-        const actualFuckingSquareCenterUserY = y - ((squareScreen * 1 / Math.min(t.aspectRatio, 1)) / ScreenToUserRatio / 2) / t.k;
+        const screenWidth = SVGBBox.width;
+        const screenHeight = SVGBBox.height;
+        const userWidth = SVGViewBox.width;
+        const userHeight = SVGViewBox.height;
+        const screentoUserRatioX = screenWidth / userWidth;
+        const screentoUserRatioY = screenHeight / userHeight;
+
+        const dx = t.x / t.k;
+        const dy = t.y / t.k;
+
         this.G.select("#svg-minimap-rect").remove();
         this.G
             .append("rect")
             .attr("id", "svg-minimap-rect")
-            .attr("width", widthUser)
-            .attr("height", heightUser)
+            .attr("width", SVGBBox.width / screentoUserRatioX / t.k)
+            .attr("height", SVGBBox.height / screentoUserRatioY / t.k)
             .attr('stroke', 'red')
             .attr('stroke-width', 6)
             .attr('fill', 'none')
-            .attr("x", actualFuckingSquareCenterUserX)
-            .attr("y", actualFuckingSquareCenterUserY)
+            .attr('transform', `translate(${-dx},${-dy})`)
             ;
     }
 
