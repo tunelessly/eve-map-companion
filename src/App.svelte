@@ -1,16 +1,8 @@
 <script lang="ts">
-    // import { onMount } from "svelte";
-    // import {
-    //     regionChangedPubsub,
-    //     initialArgsPubsub,
-    // } from "./utils/svelte-store";
-    // import { regions } from "./utils/regions";
     import Search from "./components/Search.svelte";
     import Select from "./components/Select.svelte";
     import SVGBig from "./view/SVG/SVGBig.svelte";
     import SVGmini from "./view/SVG/SVGmini.svelte";
-
-   // let root: HTMLDivElement;
 </script>
 
 
@@ -58,8 +50,10 @@
         align-items: baseline;
     }
 
-    
-
+    h1 {
+      font-family: 'Helvetica';
+      text-shadow: 1px 1px 2px lightgoldenrodyellow;
+    }
 
     @media only screen and (max-width: 600px) {
         #layout {

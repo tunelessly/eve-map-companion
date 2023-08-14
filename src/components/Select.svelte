@@ -5,8 +5,6 @@
         initialArgsPubsub,
     } from "../utils/svelte-store";
     import { regions } from "../utils/regions";
-    import SVGView from "../view/SVG/SVG.svelte";
-
 
     let selectedRegion: string;
     let regionNames: string[] = [];
@@ -49,11 +47,11 @@
     {/each}
 </select>
 
-
-<!-- <style>
-    div {
-        display: flex;
-        flex-direction: column;
+<style>
+    select {
+        width: 68%;
         text-align: center;
+        padding: 0.05rem 0rem 0.05rem 0rem;
+        box-sizing: border-box;
     }
-</style> -->
+</style>

@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Tektur&display=swap');
-
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -22,19 +20,7 @@
 body {
   width: 100%;
   height: 100%;
-
-}
-
-h1 {
-  font-family: 'Tektur', cursive;
-  text-shadow: 1px 1px 2px lightgoldenrodyellow;
-}
-
-select {
-    width: 68%;
-    text-align: center;
-    padding: 0.05rem 0rem 0.05rem 0rem;
-    box-sizing: border-box;
+  margin: 0;
 }
 
 #app {
@@ -53,11 +39,6 @@ footer {
   text-align: center;
   padding: 0.3rem;
 }
-
-/* svg:not(:root) {
-    overflow-clip-margin: content-box;
-    overflow: hidden;
-} */
 
 @media only screen and (max-width: 600px) {
   select {

@@ -55,8 +55,8 @@ export class SVGView implements ViewLike {
         this._clickListener = listener;
     }
 
-    public update(regionName: string, isInteractive: boolean = false): void {
-        d3.svg(`${regionName}.svg`)
+    public update(regionName: string, isInteractive: boolean = false): Promise<void> {
+        return d3.svg(`${regionName}.svg`)
             .then(svgDocument => {
                 const svgElement: SVGSVGElement = <SVGSVGElement><any>svgDocument.documentElement;
                 this.replaceOrAppend(svgElement);
@@ -106,7 +106,6 @@ export class SVGView implements ViewLike {
                 }
             })
             .catch(console.error);
-
     }
 
     private addZoomBehavior(zoom: d3.ZoomBehavior<Element, unknown>, initialTransform: d3.ZoomTransform) {

@@ -13,30 +13,38 @@
     let miniMapDiv: HTMLDivElement;
     let svgViewMini: SVGView;
 
-    mapDragPubSub.subscribe((transform) => {
-        if (svgViewMini === undefined) return;
-        svgViewMini.minimapRect(transform);
-    });
-
-    regionChangedPubsub.subscribe((data) => {
-        if (svgViewMini === undefined) return;
-        svgViewMini.update(data);
-    });
-
     onMount(() => {
         svgViewMini = new SVGView(miniMapDiv);
-        svgViewMini.addClickListener(mapClickPubSub);
+
+        const settledPromise = new Promise<void>((resolve, reject) => {
+            regionChangedPubsub.subscribe((data) => {
+                if(data === undefined) reject();
+                svgViewMini.update(data).then((_) => resolve());
+            });
+        });
+
+        settledPromise.then((_) => {
+            mapDragPubSub.subscribe((transform) => {
+                if(transform === undefined) return;
+                svgViewMini.minimapRect(transform);
+            });
+
+            svgViewMini.addClickListener(mapClickPubSub);
+        });
     });
 </script>
 
-    <div bind:this={miniMapDiv} id="SVGMiniMap" />
-
+<div bind:this={miniMapDiv} id="SVGMiniMap" />
 
 <style>
-
     #SVGMiniMap {
         width: 100%;
         height: fit-content;
+    }
+
+    :global(#SVGMiniMap #SVGRoot) {
+        width: 100%;
+        height: 100%;
     }
 
     :global(#SVGMiniMap g polygon, #SVGMiniMap g ellipse) {
@@ -49,19 +57,17 @@
         stroke-width: 5;
     }
 
-    :global(#SVGMiniMap g text){
+    :global(#SVGMiniMap g text) {
         display: none;
     }
 
-    :global(#svg-minimap-rect){
+    :global(#svg-minimap-rect) {
         stroke: rgb(229, 255, 0);
         stroke-width: 10;
         fill: none;
     }
 
-
     @media only screen and (max-width: 600px) {
-
         #SVGMiniMap {
             visibility: collapse;
         }
