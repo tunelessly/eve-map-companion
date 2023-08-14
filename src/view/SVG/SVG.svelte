@@ -8,6 +8,8 @@
     } from "../../utils/svelte-store";
     import { onMount } from "svelte";
     import { SVGView } from "./SVGView";
+    import Search from "../../components/Search.svelte";
+    import Select from "../../components/Select.svelte";
 
     let root: HTMLDivElement;
     let bigMapDiv: HTMLDivElement;
@@ -53,27 +55,57 @@
 </script>
 
 <div bind:this={root} id="SVGRootDiv">
-    <div bind:this={miniMapDiv} id="SVGMiniMap" />
+    <div id = "sidebar">
+        <div id = "options">
+            <Select />
+            <Search />
+        </div>
+        <div bind:this={miniMapDiv} id="SVGMiniMap" />
+    </div>
+
     <div bind:this={bigMapDiv} id="SVGBigMap" />
 </div>
 
 <style>
     #SVGRootDiv {
+        box-sizing: border-box;
         display: flex;
         flex-direction: row;
         width: 100%;
         height: 100%;
     }
 
-    #SVGMiniMap {
-        width: 15%;
+    #sidebar {
+        display: flex;
+        flex-direction: column;
+        width: 20%;
         height: 100%;
+        padding: 0.2rem;
+        box-sizing: border-box;
+        justify-content: space-between;
+    }
+
+    #options {
+        height: fit-content;
+        flex-direction: column;
+        width: 100%;
+        display: flex;
+        box-sizing: border-box;
+        align-items: baseline;
+    }
+
+    #SVGMiniMap {
+        width: 100%;
+        height: fit-content;
     }
 
     #SVGBigMap {
-        width: 85%;
-        height: fit-content;
+        padding: 0.2rem;
+        box-sizing: border-box;
+        width: 80%;
+        height: 100%;
         text-align: center;
+        align-self: center;
     }
     
     :global(#SVGRoot) {
@@ -117,5 +149,35 @@
         stroke: rgb(229, 255, 0);
         stroke-width: 10;
         fill: none;
+    }
+
+
+    @media only screen and (max-width: 600px) {
+        #SVGRootDiv {
+        flex-direction: column;
+        }
+
+        #sidebar {
+            flex-direction: column;
+            width: 100%;
+            height: 5%;
+            padding: 0.2rem;
+        }
+
+        #options {
+            flex-direction: row;
+            height: 100%;
+            padding: 0.5rem 0 0.5rem 0;
+            
+        }
+
+        #SVGMiniMap {
+            visibility: collapse;
+        }
+
+        #SVGBigMap {
+            width: 100%;
+            height: 95%;
+        }
     }
 </style>

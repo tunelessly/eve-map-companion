@@ -181,7 +181,10 @@ export class SVGView implements ViewLike {
     public minimapRect(t: Transform) {
         // Estoura volta e meia pq acha que this.SVG é undefined
         const SVGViewBox = this.SVG.node().viewBox.baseVal;
-        const SVGBBox = this.SVG.node().getBoundingClientRect()
+        const SVGBBox = this.SVG.node().getBBox();
+
+        console.dir(this.SVG.node().getBBox());
+        console.dir(this.SVG.node().getBoundingClientRect());
 
         const screenWidth = SVGBBox.width;
         const screenHeight = SVGBBox.height;

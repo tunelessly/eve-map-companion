@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Tektur&display=swap');
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -12,4 +14,55 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+
+  height: 100vh;
+  width: 100vw;
 }
+
+body {
+  width: 100%;
+  height: 100%;
+
+}
+
+h1 {
+  font-family: 'Tektur', cursive;
+  text-shadow: 1px 1px 2px lightgoldenrodyellow;
+}
+
+select {
+    width: 68%;
+    text-align: center;
+    padding: 0.05rem 0rem 0.05rem 0rem;
+    box-sizing: border-box;
+}
+
+#app {
+    display: flex;
+    width: 100%;
+    height: 95%;
+    padding: 0 0 0 0.5rem;
+    box-sizing: border-box;
+}
+
+footer {
+  height: 5%;
+  border-radius: 0.5rem;
+  box-shadow: rgba(255, 255, 255, 0.06) 0px 2px 4px 0px inset;
+  box-sizing: border-box;
+  text-align: center;
+  padding: 0.3rem;
+}
+
+/* svg:not(:root) {
+    overflow-clip-margin: content-box;
+    overflow: hidden;
+} */
+
+@media only screen and (max-width: 600px) {
+  select {
+    margin: 0 0.5rem 0 0;
+    width:50%;
+  }  
+}
+
