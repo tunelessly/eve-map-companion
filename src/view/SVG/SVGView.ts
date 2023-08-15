@@ -243,6 +243,8 @@ export class SVGView implements ViewLike {
         const x = selectedNode.x.baseVal[0].value;
         const y = selectedNode.y.baseVal[0].value;
         this.zoom.translateTo(this.SVG, x, y);
+        // TODO: Why...?
+        this.zoom.translateTo(this.SVG, x, y);
         this.zoom.scaleTo(this.SVG, 3);
     }
 
