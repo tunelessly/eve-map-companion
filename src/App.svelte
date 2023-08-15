@@ -2,7 +2,7 @@
     import Search from "./components/Search.svelte";
     import Select from "./components/Select.svelte";
     import SVGBig from "./view/SVG/SVGBig.svelte";
-    import SVGmini from "./view/SVG/SVGmini.svelte";
+    import SVGMini from "./view/SVG/SVGmini.svelte";
 </script>
 
 
@@ -13,7 +13,7 @@
             <Select />
             <Search />
         </div>
-        <SVGmini />
+        <SVGMini />
     </div>
 
     <SVGBig />

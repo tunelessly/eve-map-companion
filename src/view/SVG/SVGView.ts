@@ -152,6 +152,7 @@ export class SVGView implements ViewLike {
     }
 
     private addZoomBehavior(zoom: d3.ZoomBehavior<Element, unknown>, initialTransform: d3.ZoomTransform) {
+        this._zoom = zoom;
         this.SVG.call(zoom);
         this.SVG.call(zoom.transform, initialTransform);
     }

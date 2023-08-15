@@ -1,9 +1,7 @@
 <script lang="ts">
     import {
-        systemNameSearchPubSub,
         mapDragPubSub,
         regionChangedPubsub,
-        initialArgsPubsub,
         mapClickPubSub,
     } from "../../utils/svelte-store";
     import { onMount } from "svelte";
@@ -16,14 +14,14 @@
     onMount(() => {
         svgViewMini = new SVGView(miniMapDiv);
 
-        const settledPromise = new Promise<void>((resolve, reject) => {
+        const updateSettledPromise = new Promise<void>((resolve, reject) => {
             regionChangedPubsub.subscribe((data) => {
                 if(data === undefined) reject();
                 svgViewMini.update(data).then((_) => resolve());
             });
         });
 
-        settledPromise.then((_) => {
+        updateSettledPromise.then((_) => {
             mapDragPubSub.subscribe((transform) => {
                 if(transform === undefined) return;
                 svgViewMini.minimapRect(transform);

@@ -16,13 +16,13 @@
     onMount(() => {
         svgViewBig = new SVGView(bigMapDiv);
 
-        const settledPromise = new Promise<void>((resolve, reject) => {
+        const updateSettledPromise = new Promise<void>((resolve, reject) => {
             regionChangedPubsub.subscribe((data) => {
                 svgViewBig.update(data, true).then(_ => resolve());
             });
         });
 
-        settledPromise.then(_ => {
+        updateSettledPromise.then(_ => {
             mapClickPubSub.subscribe((coordinates) => {
                 if(coordinates === undefined) return;
                 // TODO: this might cause the history api to bitch
@@ -37,8 +37,9 @@
             });
 
             initialArgsPubsub.subscribe((data) => {
+                console.log("yo");
                 if(data === undefined) return;
-                // svgViewBig.applyTransform(data.args);
+                svgViewBig.applyTransform(data.args);
             });
 
             svgViewBig.addTransformListener(mapDragPubSub);
