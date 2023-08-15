@@ -94,14 +94,18 @@ export class SVGView implements ViewLike {
                 const initialTransform = this.parseTransformList((<SVGSVGElement>G.node()).transform.baseVal);
                 this._initialTransform = initialTransform;
                 SVG
+                    // Remove the width and height attribute so as not to
+                    // override any potential CSS rules
                     .attr("width", null)
                     .attr("height", null)
+                    //
                     .attr("id", "SVGRoot")
                     .attr("preserveAspectRatio", "xMidYMid meet")
                     ;
                 const originalViewbox = SVG.node().viewBox.baseVal;
                 this._viewboxDimensions = [originalViewbox.width, originalViewbox.height];
 
+                // Remove the all-white polygon acting as the background to the SVG.
                 G.select("polygon").remove();
 
                 this._SVG = SVG;
@@ -116,20 +120,20 @@ export class SVGView implements ViewLike {
                     center,
                 };
 
-                const zoom = d3.zoom()
-                    .scaleExtent([1, 8])
-                    .translateExtent([
-                        [0 - initialTransform.translate.x, 0 - initialTransform.translate.y],
-                        [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y]
-                    ])
-                    .on('zoom', this.zoomed)
-                    .on('end', this.zoomEnd);
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // Get all system names
+                ////////////////////////////////////////////////////////////////////////////////
+                const systemNames = G.selectAll(".node").nodes().map((data: SVGGElement) => data.id);
+                this._systemNames = systemNames;
 
 
-                const initiald3Transform = d3.zoomIdentity
-                    .translate(initialTransform.translate.x, initialTransform.translate.y)
-                    .scale(initialTransform.scale.x);
-
+                ////////////////////////////////////////////////////////////////////////////////
+                // Compute the exterior container's screen-space rectangle expressed in internal
+                // SVG user coordinates. This rectangle represents the actually-visible portion
+                // of the SVG including any space created around the viewbox because of
+                // aspect ratio preservation.
+                //
                 const rect = this.SVG.node().getBoundingClientRect();
                 const matrix = SVG.node().getScreenCTM();
                 const x = (rect.x - matrix.e) / matrix.a;
@@ -137,14 +141,33 @@ export class SVGView implements ViewLike {
                 const width = rect.width / matrix.a;
                 const height = rect.height / matrix.d;
                 this._boundingRect = { x, y, width, height };
+                ////////////////////////////////////////////////////////////////////////////////
 
                 if (isInteractive) {
+                    // Non-interactive versions of the SVG (e.g. the minimap) do not need
+                    // any zoom/pan behavior.
+                    const zoom = d3.zoom()
+                        .scaleExtent([1, 8])
+                        .translateExtent([
+                            [0 - initialTransform.translate.x, 0 - initialTransform.translate.y],
+                            [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y]
+                        ])
+                        .on('zoom', this.zoomed)
+                        .on('end', this.zoomEnd);
+
+
+                    const initiald3Transform = d3.zoomIdentity
+                        .translate(initialTransform.translate.x, initialTransform.translate.y)
+                        .scale(initialTransform.scale.x);
                     this.addZoomBehavior(zoom, initiald3Transform);
                 }
             })
             .catch(console.error);
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    // Computes the offset in both axes from the first child node to the SVG origin
+    ///////////////////////////////////////////////////////////////////////////////
     private getOriginOffsetFromFirstChild() {
         const rect = this.boundingRect;
         const firstChild = <SVGTextElement>this.G.select('text').node();
@@ -157,6 +180,9 @@ export class SVGView implements ViewLike {
         this.SVG.call(zoom.transform, initialTransform);
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    // Parses the transformation matrix into a friendlier, more obvious format
+    ///////////////////////////////////////////////////////////////////////////////
     private parseTransformList(transformList: SVGTransformList) {
         const retVal = { scale: { x: 1, y: 1 }, translate: { x: 0, y: 0 } };
         for (let transform of transformList) {
@@ -180,6 +206,9 @@ export class SVGView implements ViewLike {
         return retVal;
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    // Replaces/appends the SVG into the parent container.
+    ///////////////////////////////////////////////////////////////////////////////
     private replaceOrAppend(element: SVGSVGElement) {
         const previousSVG = this.rootHTMLElement.getElementsByTagName('svg')[0];
         if (previousSVG === undefined)
@@ -188,6 +217,9 @@ export class SVGView implements ViewLike {
             this.rootHTMLElement.replaceChild(element, previousSVG);
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    // Parses an obfuscated query string into a transform and then applies it.
+    ///////////////////////////////////////////////////////////////////////////////
     public applyTransform(transformStr: string) {
         const transform = this.transformParser(transformStr);
         if (transform === undefined) return;
@@ -196,31 +228,29 @@ export class SVGView implements ViewLike {
         svg.call(this.zoom.transform, d3transform);
     }
 
-    public centerOnCoords(x: number, y: number, newScale?: number) {
-        const svg = this.SVG;
-        const viewboxDimensions = this.viewboxDimensions;
-        const zoom = this.zoom;
-        const scale = newScale || this.zoomScale;
-        const center = this.boundingBox.center;
-        const X = -x * scale + viewboxDimensions[0] / 2 + center[0];
-        const Y = -y * scale + viewboxDimensions[0] / 2 + center[1];
-        const newZoom = d3.zoomIdentity.translate(X, Y).scale(scale);
-        svg.call(zoom.transform, newZoom);
-    }
-
+    ///////////////////////////////////////////////////////////////////////////////
+    // Centers the SVG's viewbox on the given node's name
+    ///////////////////////////////////////////////////////////////////////////////
     public centerOnNode(searchStr: string) {
-        const svg = this.SVG;
+        const G = this.G;
         const matches = this.names.map(name => {
             const d: number = jaroWinkler(name.toLowerCase(), searchStr.toLowerCase());
             return { name, distance: d };
         }).sort((x, y) => y.distance - x.distance);
-        const closestMatch = matches[0];
-        const selection = svg.select(`#system-${closestMatch.name}`);
-        const x = parseFloat(selection.attr("x"));
-        const y = parseFloat(selection.attr("y"));
-        this.centerOnCoords(x, y, 2);
+        let closestMatch = matches[0].name;
+        const selection = G.select(`#${closestMatch} text`);
+        const selectedNode: SVGTextElement = <SVGTextElement> selection.node();
+        const x = selectedNode.x.baseVal[0].value;
+        const y = selectedNode.y.baseVal[0].value;
+        this.zoom.translateTo(this.SVG, x, y);
+        this.zoom.scaleTo(this.SVG, 3);
     }
 
+
+    ///////////////////////////////////////////////////////////////////////////////
+    // Draws a rectangle on the origin + an offset.
+    // This rectangle is then rescaled and translated by the given transform 
+    ///////////////////////////////////////////////////////////////////////////////
     public minimapRect(t: Transform) {
         const offset = this.getOriginOffsetFromFirstChild();
         const dx = t.x / t.k;

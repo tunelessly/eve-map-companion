@@ -37,7 +37,6 @@
             });
 
             initialArgsPubsub.subscribe((data) => {
-                console.log("yo");
                 if(data === undefined) return;
                 svgViewBig.applyTransform(data.args);
             });
