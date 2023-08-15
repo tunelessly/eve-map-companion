@@ -5,6 +5,30 @@ import * as d3 from "d3";
 import type { Writable } from "svelte/store";
 import type { Transform, UserCoordinates } from "../../utils/svelte-store"
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Minimap method
+// 1) Get the screen-space bounding box for the SVG.
+// 2) Map the screen-space coordinates for this rect into SVG user coordinates.
+// 2a) (Optional) Verify that the rectangle is correct by drawing it on the 
+//          larger SVG.
+// 3) This SVG user coordinate rectangle represents the visible portion.
+//          We want to draw this rectangle on the smaller SVG but we need more info.
+// 4) Since both SVGs have the same data, pick the first node and get its coordinates.
+// 5) Do the previous step on _both_ SVGs.
+// 6) Calculate the offset in both axes to the origin for the chosen point.
+//          Knowing these points allows us to compare how far each SVG's origin is
+//          from the same point.
+// 7) The larger SVG sends its offset to the smaller SVG.
+// 8) The smaller SVG computes the final offset - the difference between the
+//          the larger and smaller SVG's offsets.
+// 9) Apply the offset to the rectangle. This moves the rectangle to the correct
+//          position on the new SVG.
+// 10) ???
+// 11) Profit
+//
+///////////////////////////////////////////////////////////////////////////////
+
 export class SVGView implements ViewLike {
     protected readonly _rootHTMLElement: HTMLElement;
     protected _SVG: d3.Selection<SVGSVGElement, unknown, null, undefined>;
@@ -18,9 +42,11 @@ export class SVGView implements ViewLike {
         corner2: [number, number],
         center: [number, number],
     };
+    protected _initialTransform: { scale: { x: number, y: number }, translate: { x: number, y: number } };
     protected _viewboxDimensions = [100, 100];
     protected _transformListener: Writable<Transform>;
     protected _clickListener: Writable<UserCoordinates>;
+    protected _boundingRect: { x: number, y: number, width: number, height: number };
 
     protected get rootHTMLElement() { return this._rootHTMLElement; }
     protected get SVG() { return this._SVG; }
@@ -33,6 +59,8 @@ export class SVGView implements ViewLike {
     protected get transformListener() { return this._transformListener; }
     protected get clickListener() { return this._clickListener; }
     protected get zoomScale() { return this._zoomScale; }
+    protected get initialTransform() { return this._initialTransform; }
+    protected get boundingRect() { return this._boundingRect; }
 
 
     constructor(rootHTMLElement: HTMLElement) {
@@ -64,12 +92,13 @@ export class SVGView implements ViewLike {
                 const SVG = d3.select(svgElement);
                 const G = SVG.select('#graph0');
                 const initialTransform = this.parseTransformList((<SVGSVGElement>G.node()).transform.baseVal);
+                this._initialTransform = initialTransform;
                 SVG
                     .attr("width", null)
                     .attr("height", null)
                     .attr("id", "SVGRoot")
                     .attr("preserveAspectRatio", "xMidYMid meet")
-                ;
+                    ;
                 const originalViewbox = SVG.node().viewBox.baseVal;
                 this._viewboxDimensions = [originalViewbox.width, originalViewbox.height];
 
@@ -101,11 +130,25 @@ export class SVGView implements ViewLike {
                     .translate(initialTransform.translate.x, initialTransform.translate.y)
                     .scale(initialTransform.scale.x);
 
+                const rect = this.SVG.node().getBoundingClientRect();
+                const matrix = SVG.node().getScreenCTM();
+                const x = (rect.x - matrix.e) / matrix.a;
+                const y = (rect.y - matrix.f) / matrix.d;
+                const width = rect.width / matrix.a;
+                const height = rect.height / matrix.d;
+                this._boundingRect = { x, y, width, height };
+
                 if (isInteractive) {
                     this.addZoomBehavior(zoom, initiald3Transform);
                 }
             })
             .catch(console.error);
+    }
+
+    private getOriginOffsetFromFirstChild() {
+        const rect = this.boundingRect;
+        const firstChild = <SVGTextElement>this.G.select('text').node();
+        return { x: rect.x - firstChild.x.baseVal[0].value, y: rect.y - firstChild.y.baseVal[0].value, name: firstChild.textContent };
     }
 
     private addZoomBehavior(zoom: d3.ZoomBehavior<Element, unknown>, initialTransform: d3.ZoomTransform) {
@@ -178,31 +221,24 @@ export class SVGView implements ViewLike {
     }
 
     public minimapRect(t: Transform) {
-        // Estoura volta e meia pq acha que this.SVG é undefined
-        const SVGViewBox = this.SVG.node().viewBox.baseVal;
-        const SVGBBox = this.SVG.node().getBBox();
-
-        console.dir(this.SVG.node().getBBox());
-        console.dir(this.SVG.node().getBoundingClientRect());
-
-        const screenWidth = SVGBBox.width;
-        const screenHeight = SVGBBox.height;
-        const userWidth = SVGViewBox.width;
-        const userHeight = SVGViewBox.height;
-        const screentoUserRatioX = screenWidth / userWidth;
-        const screentoUserRatioY = screenHeight / userHeight;
-
+        const offset = this.getOriginOffsetFromFirstChild();
         const dx = t.x / t.k;
         const dy = t.y / t.k;
+        const width = t.rect.width / t.k;
+        const height = t.rect.height / t.k;
+        const offsetX = t.offset.x - offset.x;
+        const offsetY = t.offset.y - offset.y;
+        const x = t.rect.x - offsetX;
+        const y = t.rect.y - offsetY;
 
-        console.dir("removing rect");
         this.G.select("#svg-minimap-rect").remove();
-        console.dir("adding rect");
         this.G
             .append("rect")
             .attr("id", "svg-minimap-rect")
-            .attr("width", SVGBBox.width / screentoUserRatioX / t.k)
-            .attr("height", SVGBBox.height / screentoUserRatioY / t.k)
+            .attr("width", width)
+            .attr("height", height)
+            .attr("x", x)
+            .attr("y", y)
             .attr('transform', `translate(${-dx},${-dy})`)
             ;
     }
@@ -232,11 +268,8 @@ export class SVGView implements ViewLike {
 
     protected zoomed = (event) => {
         const { transform } = event;
-        const screenWidth = this.rootHTMLElement.clientWidth;
-        const screenHeight = this.rootHTMLElement.clientHeight;
-        const aspectRatio = screenWidth / screenHeight;
         this.G.attr("transform", transform);
-        if (this.transformListener !== undefined) this.transformListener.set({ ...transform, aspectRatio });
+        if (this.transformListener !== undefined) this.transformListener.set({ ...transform, rect: this.boundingRect, offset: this.getOriginOffsetFromFirstChild() });
         this._zoomScale = transform.k;
     }
 

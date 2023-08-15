@@ -8,7 +8,13 @@ export type Transform = {
     k: number;
     x: number;
     y: number;
-    aspectRatio: number;
+    rect: {
+        width: number;
+        height: number;
+        x: number;
+        y: number;
+    };
+    offset: { x: number, y: number }
 }
 
 export type InitialArgs = {
