@@ -66,7 +66,7 @@
 
     :global(#SVGBigMap g text) {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        font-size: 1.7vh;
+        font-size: medium;
         text-anchor: middle;
         cursor: pointer;
     }

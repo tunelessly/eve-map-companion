@@ -104,7 +104,7 @@ export class SVGView implements ViewLike {
                 // Compute the exterior container's screen-space rectangle expressed in internal
                 // SVG user coordinates. This rectangle represents the actually-visible portion
                 // of the SVG including any space created around the viewbox that may have been 
-                // cause by mechanisms that preserve the aspect ratio of the SVG's contents.
+                // caused by mechanisms that preserve the aspect ratio of the SVG's contents.
                 //
                 const rect = this.SVG.node().getBoundingClientRect();
                 const matrix = SVG.node().getScreenCTM();
