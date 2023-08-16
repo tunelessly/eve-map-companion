@@ -4,12 +4,11 @@
         mapDragPubSub,
         regionChangedPubsub,
         initialArgsPubsub,
-        mapClickPubSub,
+        miniMapClickPubSub,
     } from "../../utils/svelte-store";
     import { onMount } from "svelte";
     import { SVGView } from "./SVGView";
 
-    let root: HTMLDivElement;
     let bigMapDiv: HTMLDivElement;
     let svgViewBig: SVGView;
 
@@ -18,34 +17,30 @@
 
         const updateSettledPromise = new Promise<void>((resolve, reject) => {
             regionChangedPubsub.subscribe((data) => {
-                svgViewBig.update(data, true).then(_ => resolve());
+                svgViewBig.update(data, true).then((_) => resolve());
             });
         });
 
-        updateSettledPromise.then(_ => {
-            mapClickPubSub.subscribe((coordinates) => {
-                if(coordinates === undefined) return;
-                // TODO: this might cause the history api to bitch
-                // depending on the frequency of events.
-                // Needs a refactor
-                // svgViewBig.centerOnCoords(coordinates.x, coordinates.y);
+        updateSettledPromise.then((_) => {
+            initialArgsPubsub.subscribe((data) => {
+                if (data === undefined) return;
+                svgViewBig.applyTransform(data.args);
+            });
+
+            miniMapClickPubSub.subscribe((interaction) => {
+                if (interaction === undefined) return;
+                svgViewBig.centerOnInteractionCoordinates(interaction);
             });
 
             systemNameSearchPubSub.subscribe((systemSearch) => {
-                if(systemSearch === undefined) return;
+                if (systemSearch === undefined) return;
                 svgViewBig.centerOnNode(systemSearch.systemName);
-            });
-
-            initialArgsPubsub.subscribe((data) => {
-                if(data === undefined) return;
-                svgViewBig.applyTransform(data.args);
             });
 
             svgViewBig.addTransformListener(mapDragPubSub);
         });
     });
 </script>
-
 
 <div bind:this={bigMapDiv} id="SVGBigMap" />
 
@@ -81,10 +76,8 @@
         fill: white;
         stroke-width: 0.3;
     }
-    
 
     @media only screen and (max-width: 600px) {
-        
         #SVGBigMap {
             width: 100%;
             height: 95%;

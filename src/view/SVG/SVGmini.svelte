@@ -2,7 +2,7 @@
     import {
         mapDragPubSub,
         regionChangedPubsub,
-        mapClickPubSub,
+        miniMapClickPubSub,
     } from "../../utils/svelte-store";
     import { onMount } from "svelte";
     import { SVGView } from "./SVGView";
@@ -27,7 +27,7 @@
                 svgViewMini.minimapRect(transform);
             });
 
-            svgViewMini.addClickListener(mapClickPubSub);
+            svgViewMini.addClickListener(miniMapClickPubSub);
         });
     });
 </script>

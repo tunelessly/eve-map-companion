@@ -3,7 +3,8 @@ import { HSV2RGB, sectoHSV } from "../utils/utils";
 import { jaroWinkler } from "jaro-winkler-typescript";
 import * as d3 from "d3";
 import type { Writable } from "svelte/store";
-import type { Transform, UserCoordinates } from "../../utils/svelte-store"
+import type { TransformAndRect, Interaction } from "../../utils/svelte-store"
+import { History } from '../../utils/history';
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -29,8 +30,8 @@ export class SVGView implements ViewLike {
     protected _systemNames: string[] = [];
     protected _initialTransform: { scale: { x: number, y: number }, translate: { x: number, y: number } };
     protected _viewboxDimensions = [100, 100];
-    protected _transformListener: Writable<Transform>;
-    protected _clickListener: Writable<UserCoordinates>;
+    protected _transformListener: Writable<TransformAndRect>;
+    protected _clickListener: Writable<Interaction>;
     protected _boundingRect: { x: number, y: number, width: number, height: number };
 
     protected get rootHTMLElement() { return this._rootHTMLElement; }
@@ -115,24 +116,33 @@ export class SVGView implements ViewLike {
                 this._boundingRect = { x, y, width, height };
                 ////////////////////////////////////////////////////////////////////////////////
 
+                // Non-interactive versions of the SVG (e.g. the minimap) do not need
+                // any zoom/pan behavior.
                 if (isInteractive) {
-                    // Non-interactive versions of the SVG (e.g. the minimap) do not need
-                    // any zoom/pan behavior.
-                    const zoom = d3.zoom()
-                        .scaleExtent([1, 8])
-                        .translateExtent([
-                            [0 - initialTransform.translate.x, 0 - initialTransform.translate.y],
-                            [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y]
-                        ])
-                        .on('zoom', this.zoomed)
-                        .on('end', this.zoomEnd);
+                    const scaleExtent: [number, number] = [1, 8];
+                    const translateExtent: [[number, number], [number, number]] = [
+                        [0 - initialTransform.translate.x, 0 - initialTransform.translate.y],
+                        [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y]
+                    ];
+                    const targetZoomFunction = this.zoomed;
+                    const targetZoomEndFunction = this.zoomEnd;
 
+                    const zoom = d3.zoom()
+                        .scaleExtent(scaleExtent)
+                        .translateExtent(translateExtent)
+                        .on('zoom', targetZoomFunction)
+                        .on('end', targetZoomEndFunction);
 
                     const initiald3Transform = d3.zoomIdentity
                         .translate(initialTransform.translate.x, initialTransform.translate.y)
                         .scale(initialTransform.scale.x);
                     this.addZoomBehavior(zoom, initiald3Transform);
                 }
+                else {
+                    SVG.on("pointerdown", (event) => { SVG.on("pointermove", this.minimapZoom); this.minimapZoom(event) });
+                    SVG.on("pointerup", (event) => { SVG.on("pointermove", null); this.minimapZoom(event) });
+                }
+
             })
             .catch(console.error);
     }
@@ -205,8 +215,21 @@ export class SVGView implements ViewLike {
         const selectedNode: SVGTextElement = <SVGTextElement>selection.node();
         const x = selectedNode.x.baseVal[0].value;
         const y = selectedNode.y.baseVal[0].value;
-        this.zoom.scaleTo(this.SVG, 3);
+        this.centerOnCoordinates(x, y, 3);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    // Centers the SVG's viewbox on the given coordinates at the given scale
+    ///////////////////////////////////////////////////////////////////////////////
+    public centerOnCoordinates(x: number, y: number, scale: number) {
+        this.zoom.scaleTo(this.SVG, scale);
         this.zoom.translateTo(this.SVG, x, y);
+    }
+
+    public centerOnInteractionCoordinates(i: Interaction) {
+        const x = i.x - this.initialTransform.translate.x;
+        const y = i.y - this.initialTransform.translate.y;
+        this.centerOnCoordinates(x, y, 8);
     }
 
 
@@ -214,7 +237,7 @@ export class SVGView implements ViewLike {
     // Draws a rectangle on the origin + an offset.
     // This rectangle is then rescaled and translated by the given transform 
     ///////////////////////////////////////////////////////////////////////////////
-    public minimapRect(t: Transform) {
+    public minimapRect(t: TransformAndRect) {
         // TODO: this can likely be rewritten in terms of
         // transformations in d3 but their documentation is
         // quite unhelpful and I'm sick and tired of messing with this
@@ -232,7 +255,7 @@ export class SVGView implements ViewLike {
             .attr("width", width)
             .attr("height", height)
             .attr("x", x)
-            .attr("y", y) 
+            .attr("y", y)
             .attr('transform', `translate(${dx},${dy})`)
             ;
     }
@@ -247,9 +270,15 @@ export class SVGView implements ViewLike {
         this.zoomed(event);
         const { transform } = event;
         const serialized = btoa(JSON.stringify(transform));
-        const currentURL = new URL(window.location.toString());
-        currentURL.searchParams.set("args", serialized);
-        history.replaceState({}, '', currentURL.toString());
+        History.instance.setHistory("args", serialized);
+    }
+
+    protected minimapZoom = (event) => {
+        const coords = d3.pointer(event);
+        const eventType = event.type;
+        const x = coords[0];
+        const y = coords[1];
+        if (this.clickListener !== undefined) this.clickListener.set({ type: eventType, x, y });
     }
 
     protected transformParser = (transform: string): { translate: number[], scale: number } => {

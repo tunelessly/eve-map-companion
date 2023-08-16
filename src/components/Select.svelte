@@ -5,15 +5,14 @@
         initialArgsPubsub,
     } from "../utils/svelte-store";
     import { regions } from "../utils/regions";
+    import { History } from "../utils/history";
 
     let selectedRegion: string;
     let regionNames: string[] = [];
 
     const update = (regionName: string) => {
         selectedRegion = regionName;
-        const currentURL = new URL(window.location.toString());
-        currentURL.searchParams.set("region", regionName);
-        history.replaceState({}, "", currentURL.toString());
+        History.instance.setHistory("region", regionName);
         regionChangedPubsub.set(regionName);
     };
 
@@ -37,11 +36,7 @@
     });
 </script>
 
-
-<select
-    bind:value={selectedRegion}
-    on:change={() => update(selectedRegion)}
->
+<select bind:value={selectedRegion} on:change={() => update(selectedRegion)}>
     {#each regionNames as name}
         <option value={name}>{name}</option>
     {/each}
