@@ -229,7 +229,8 @@ export class SVGView implements ViewLike {
     public centerOnInteractionCoordinates(i: Interaction) {
         const x = i.x - this.initialTransform.translate.x;
         const y = i.y - this.initialTransform.translate.y;
-        this.centerOnCoordinates(x, y, 8);
+        const scale = d3.zoomTransform(this.SVG.node()).k;
+        this.centerOnCoordinates(x, y, scale);
     }
 
 
