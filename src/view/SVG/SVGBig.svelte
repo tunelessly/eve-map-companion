@@ -28,7 +28,7 @@
                 // TODO: this might cause the history api to bitch
                 // depending on the frequency of events.
                 // Needs a refactor
-                svgViewBig.centerOnCoords(coordinates.x, coordinates.y);
+                // svgViewBig.centerOnCoords(coordinates.x, coordinates.y);
             });
 
             systemNameSearchPubSub.subscribe((systemSearch) => {

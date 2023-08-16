@@ -165,15 +165,6 @@ export class SVGView implements ViewLike {
             .catch(console.error);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
-    // Computes the offset in both axes from the first child node to the SVG origin
-    ///////////////////////////////////////////////////////////////////////////////
-    private getOriginOffsetFromFirstChild() {
-        const rect = this.boundingRect;
-        const firstChild = <SVGTextElement>this.G.select('text').node();
-        return { x: rect.x - firstChild.x.baseVal[0].value, y: rect.y - firstChild.y.baseVal[0].value, name: firstChild.textContent };
-    }
-
     private addZoomBehavior(zoom: d3.ZoomBehavior<Element, unknown>, initialTransform: d3.ZoomTransform) {
         this._zoom = zoom;
         this.SVG.call(zoom);
@@ -239,7 +230,7 @@ export class SVGView implements ViewLike {
         }).sort((x, y) => y.distance - x.distance);
         let closestMatch = matches[0].name;
         const selection = G.select(`#${closestMatch} text`);
-        const selectedNode: SVGTextElement = <SVGTextElement> selection.node();
+        const selectedNode: SVGTextElement = <SVGTextElement>selection.node();
         const x = selectedNode.x.baseVal[0].value;
         const y = selectedNode.y.baseVal[0].value;
         this.zoom.translateTo(this.SVG, x, y);
@@ -254,15 +245,15 @@ export class SVGView implements ViewLike {
     // This rectangle is then rescaled and translated by the given transform 
     ///////////////////////////////////////////////////////////////////////////////
     public minimapRect(t: Transform) {
-        const offset = this.getOriginOffsetFromFirstChild();
-        const dx = t.x / t.k;
-        const dy = t.y / t.k;
+        // TODO: this can likely be rewritten in terms of
+        // transformations in d3 but their documentation is
+        // quite unhelpful and I'm sick and tired of messing with this
+        const dx = -t.x / t.k;
+        const dy = -t.y / t.k;
+        const x = t.rect.x / t.k;
+        const y = t.rect.y / t.k;
         const width = t.rect.width / t.k;
         const height = t.rect.height / t.k;
-        const offsetX = t.offset.x - offset.x;
-        const offsetY = t.offset.y - offset.y;
-        const x = t.rect.x - offsetX;
-        const y = t.rect.y - offsetY;
 
         this.G.select("#svg-minimap-rect").remove();
         this.G
@@ -271,8 +262,8 @@ export class SVGView implements ViewLike {
             .attr("width", width)
             .attr("height", height)
             .attr("x", x)
-            .attr("y", y)
-            .attr('transform', `translate(${-dx},${-dy})`)
+            .attr("y", y) 
+            .attr('transform', `translate(${dx},${dy})`)
             ;
     }
 
@@ -302,7 +293,7 @@ export class SVGView implements ViewLike {
     protected zoomed = (event) => {
         const { transform } = event;
         this.G.attr("transform", transform);
-        if (this.transformListener !== undefined) this.transformListener.set({ ...transform, rect: this.boundingRect, offset: this.getOriginOffsetFromFirstChild() });
+        if (this.transformListener !== undefined) this.transformListener.set({ ...transform, rect: this.boundingRect, originalTransform: transform });
         this._zoomScale = transform.k;
     }
 
