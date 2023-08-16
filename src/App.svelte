@@ -1,118 +1,78 @@
 <script lang="ts">
-  console.log = import.meta.env.DEV ? console.log : () => {};
-  import { Controller } from "./controller/controller";
-  import type { ViewLike } from "./view/viewlike";
-  import { webGLView } from "./view/webGL/webGL";
-  import { SVGView } from "./view/SVG/SVGView";
-  import { Galaxy } from "./model/galaxy";
-  import { onMount } from "svelte";
-  import eveUniverse from "./model/universe-pretty-1682199656932.json";
-  import eveSubway from "./model/region-subway-pretty-1682211913146.json";
-
-  let rootHTMLElement: HTMLElement;
-  let selectedRegion: string = "-";
-  let regionNames: string[] = [];
-  let asSubway: boolean = false;
-  $: asSubway;
-  $: selectedRegion;
-  let controller: Controller;
-
-  const changeToRegion = (regionName: string, asSubway: boolean) => {
-    if (selectedRegion == "-") {
-      return;
-    } else if (selectedRegion === Galaxy.instance.name) {
-      const view = new webGLView(rootHTMLElement);
-      controller.changeView(view);
-      controller.displayGalaxy();
-      return;
-    }
-
-    if (asSubway) {
-      console.log("SVG");
-      const view = new SVGView(rootHTMLElement);
-      controller.changeView(view);
-    } else {
-      console.log("WebGL");
-      const view = new webGLView(rootHTMLElement);
-      controller.changeView(view);
-    }
-    controller.displayRegion(regionName, asSubway);
-  };
-
-  const fromURLSearch = (
-    qs: string
-  ): {
-    view: ViewLike;
-    region: string;
-    asSubway: boolean;
-  } => {
-    const params = new URLSearchParams(qs);
-    const region = params.get("region");
-    const asSubway = params.get("subway") === "true";
-    let view: ViewLike;
-    if (
-      region !== undefined &&
-      region !== Galaxy.instance.name &&
-      asSubway !== undefined
-    ) {
-      console.log("Parsed url with params", region, asSubway);
-      if (asSubway) view = new SVGView(rootHTMLElement);
-      else view = new webGLView(rootHTMLElement);
-    } else {
-      view = new webGLView(rootHTMLElement);
-    }
-    return { view, region, asSubway };
-  };
-
-  onMount(() => {
-    Galaxy.instance.populateGalaxy(eveUniverse);
-    Galaxy.instance.populateGalaxySubway(eveSubway);
-    if (window.location.search.length > 0) {
-      const model = Galaxy.instance;
-      const params = fromURLSearch(window.location.search);
-      asSubway = params.asSubway;
-      selectedRegion = params.region;
-      controller = new Controller(model, params.view);
-      if (params.region === Galaxy.instance.name) {
-        controller.displayGalaxy();
-      } else {
-        controller.displayRegion(params.region, params.asSubway);
-      }
-    } else {
-      const model = Galaxy.instance;
-      const view = new webGLView(rootHTMLElement);
-      controller = new Controller(model, view);
-      controller.displayGalaxy();
-    }
-    regionNames = [Galaxy.instance.name].concat(controller.getRegionNames());
-  });
+    import Search from "./components/Search.svelte";
+    import Select from "./components/Select.svelte";
+    import SVGBig from "./view/SVG/SVGBig.svelte";
+    import SVGMini from "./view/SVG/SVGmini.svelte";
 </script>
 
-<div bind:this={rootHTMLElement}>
-  <label>
-    <input
-      type="checkbox"
-      bind:checked={asSubway}
-      on:change={() => changeToRegion(selectedRegion, asSubway)}
-    />
-    View as subway?
-  </label>
-  <select
-    bind:value={selectedRegion}
-    on:change={() => changeToRegion(selectedRegion, asSubway)}
-  >
-    {#each regionNames as name}
-      <option value={name}>{name}</option>
-    {/each}
-  </select>
+
+<div id="layout">
+    <div id = "sidebar">
+        <div id = "menu">
+            <h1> EvE Map Companion</h1>
+            <Select />
+            <Search />
+        </div>
+        <SVGMini />
+    </div>
+
+    <SVGBig />
 </div>
 
+
 <style>
-  div {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
+    #layout {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: 100%;
+    }
+
+    #sidebar {
+        display: flex;
+        flex-direction: column;
+        width: 20%;
+        height: 100%;
+        padding: 0.2rem;
+        box-sizing: border-box;
+        justify-content: space-between;
+        box-shadow: rgba(255, 255, 255, 0.1) 0px 0px 6px -1px, rgba(255, 255, 255, 0.06) 0px 0px 4px -1px;
+    }
+
+    #menu {
+        padding: 0.5rem 0 0 0;
+        height: fit-content;
+        flex-direction: column;
+        width: 100%;
+        display: flex;
+        box-sizing: border-box;
+        align-items: baseline;
+    }
+
+    h1 {
+      font-family: 'Helvetica';
+      text-shadow: 1px 1px 2px lightgoldenrodyellow;
+    }
+
+    @media only screen and (max-width: 600px) {
+        #layout {
+        flex-direction: column;
+        }
+
+        #sidebar {
+            flex-direction: column;
+            width: 100%;
+            height: 5%;
+            padding: 0.2rem;
+        }
+
+        #menu {
+            flex-direction: row;
+            height: 100%;
+            padding: 0.5rem 0 0.5rem 0;
+            
+        }
+    }
 </style>
+
