@@ -35,6 +35,22 @@
 
 <style>
     div {
-        text-align: center;
+        display: inline-flex;
+        width: 100%;
+        justify-content: space-between;
+        box-sizing: border-box;
+        padding: 0.5rem 0rem 0.5rem 0rem;
     }
+    input {
+        width: 65%;
+    }
+
+    @media only screen and (max-width: 600px) {
+        div {
+            padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+            width: 50%;
+        }
+
+    }
+
 </style>

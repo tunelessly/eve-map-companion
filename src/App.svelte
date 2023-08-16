@@ -1,61 +1,78 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import {
-        regionChangedPubsub,
-        initialArgsPubsub,
-    } from "./utils/svelte-store";
-    import { regions } from "./utils/regions";
-    import SVGView from "./view/SVG/SVG.svelte";
     import Search from "./components/Search.svelte";
-
-    let selectedRegion: string;
-    let regionNames: string[] = [];
-
-    const update = (regionName: string) => {
-        selectedRegion = regionName;
-        const currentURL = new URL(window.location.toString());
-        currentURL.searchParams.set("region", regionName);
-        history.replaceState({}, "", currentURL.toString());
-        regionChangedPubsub.set(regionName);
-    };
-
-    const fromURLSearch = (
-        qs: string
-    ): {
-        region: string;
-        args: string;
-    } => {
-        const params = new URLSearchParams(qs);
-        const region = params.get("region") || regionNames[0];
-        const args = params.get("args") || "";
-        return { region, args };
-    };
-
-    onMount(() => {
-        regionNames = regions;
-        const params = fromURLSearch(window.location.search);
-        update(params.region);
-        initialArgsPubsub.set({ args: params.args });
-    });
+    import Select from "./components/Select.svelte";
+    import SVGBig from "./view/SVG/SVGBig.svelte";
+    import SVGMini from "./view/SVG/SVGmini.svelte";
 </script>
 
-<div>
-    <select
-        bind:value={selectedRegion}
-        on:change={() => update(selectedRegion)}
-    >
-        {#each regionNames as name}
-            <option value={name}>{name}</option>
-        {/each}
-    </select>
-    <Search />
-    <SVGView />
+
+<div id="layout">
+    <div id = "sidebar">
+        <div id = "menu">
+            <h1> EvE Map Companion</h1>
+            <Select />
+            <Search />
+        </div>
+        <SVGMini />
+    </div>
+
+    <SVGBig />
 </div>
 
+
 <style>
-    div {
+    #layout {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: 100%;
+    }
+
+    #sidebar {
         display: flex;
         flex-direction: column;
-        text-align: center;
+        width: 20%;
+        height: 100%;
+        padding: 0.2rem;
+        box-sizing: border-box;
+        justify-content: space-between;
+        box-shadow: rgba(255, 255, 255, 0.1) 0px 0px 6px -1px, rgba(255, 255, 255, 0.06) 0px 0px 4px -1px;
+    }
+
+    #menu {
+        padding: 0.5rem 0 0 0;
+        height: fit-content;
+        flex-direction: column;
+        width: 100%;
+        display: flex;
+        box-sizing: border-box;
+        align-items: baseline;
+    }
+
+    h1 {
+      font-family: 'Helvetica';
+      text-shadow: 1px 1px 2px lightgoldenrodyellow;
+    }
+
+    @media only screen and (max-width: 600px) {
+        #layout {
+        flex-direction: column;
+        }
+
+        #sidebar {
+            flex-direction: column;
+            width: 100%;
+            height: 5%;
+            padding: 0.2rem;
+        }
+
+        #menu {
+            flex-direction: row;
+            height: 100%;
+            padding: 0.5rem 0 0.5rem 0;
+            
+        }
     }
 </style>
+

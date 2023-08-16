@@ -3,36 +3,47 @@ import { HSV2RGB, sectoHSV } from "../utils/utils";
 import { jaroWinkler } from "jaro-winkler-typescript";
 import * as d3 from "d3";
 import type { Writable } from "svelte/store";
-import type { Transform, UserCoordinates } from "../../utils/svelte-store"
+import type { TransformAndRect, Interaction } from "../../utils/svelte-store"
+import { History } from '../../utils/history';
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Minimap method
+// 1) Get the screen-space bounding box for the SVG.
+// 2) Map the screen-space coordinates for this rect into SVG user coordinates.
+// 2a) (Optional) Verify that the rectangle is correct by drawing it on the 
+//          larger SVG.
+// 3) This SVG user coordinate rectangle represents the visible portion.
+//          We will simply draw it on the smaller SVG.
+// 4) Apply the transform performed on the larger SVG on the rectangle of the
+//          the smaller SVG.
+// 5) ???
+// 6) Profit.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 export class SVGView implements ViewLike {
     protected readonly _rootHTMLElement: HTMLElement;
     protected _SVG: d3.Selection<SVGSVGElement, unknown, null, undefined>;
     protected _G: d3.Selection<d3.BaseType, unknown, null, undefined>;
-    protected _translationVec: number[];
     protected _zoom: d3.ZoomBehavior<Element, unknown>;
-    protected _zoomScale: number;
     protected _systemNames: string[] = [];
-    protected _boundingBox: {
-        corner1: [number, number],
-        corner2: [number, number],
-        center: [number, number],
-    };
+    protected _initialTransform: { scale: { x: number, y: number }, translate: { x: number, y: number } };
     protected _viewboxDimensions = [100, 100];
-    protected _transformListener: Writable<Transform>;
-    protected _clickListener: Writable<UserCoordinates>;
+    protected _transformListener: Writable<TransformAndRect>;
+    protected _clickListener: Writable<Interaction>;
+    protected _boundingRect: { x: number, y: number, width: number, height: number };
 
     protected get rootHTMLElement() { return this._rootHTMLElement; }
     protected get SVG() { return this._SVG; }
     protected get G() { return this._G; }
-    protected get translationVec() { return this._translationVec; }
     protected get zoom() { return this._zoom; }
     protected get names() { return this._systemNames; }
-    protected get boundingBox() { return this._boundingBox; }
     protected get viewboxDimensions() { return this._viewboxDimensions; }
     protected get transformListener() { return this._transformListener; }
     protected get clickListener() { return this._clickListener; }
-    protected get zoomScale() { return this._zoomScale; }
+    protected get initialTransform() { return this._initialTransform; }
+    protected get boundingRect() { return this._boundingRect; }
 
 
     constructor(rootHTMLElement: HTMLElement) {
@@ -55,8 +66,8 @@ export class SVGView implements ViewLike {
         this._clickListener = listener;
     }
 
-    public update(regionName: string, isInteractive: boolean = false): void {
-        d3.svg(`${regionName}.svg`)
+    public update(regionName: string, isInteractive: boolean = false): Promise<void> {
+        return d3.svg(`${regionName}.svg`)
             .then(svgDocument => {
                 const svgElement: SVGSVGElement = <SVGSVGElement><any>svgDocument.documentElement;
                 this.replaceOrAppend(svgElement);
@@ -64,56 +75,87 @@ export class SVGView implements ViewLike {
                 const SVG = d3.select(svgElement);
                 const G = SVG.select('#graph0');
                 const initialTransform = this.parseTransformList((<SVGSVGElement>G.node()).transform.baseVal);
+                this._initialTransform = initialTransform;
                 SVG
+                    // Remove the width and height attribute so as not to
+                    // override any potential CSS rules
                     .attr("width", null)
                     .attr("height", null)
+                    //
                     .attr("id", "SVGRoot")
                     .attr("preserveAspectRatio", "xMidYMid meet")
-                ;
+                    ;
                 const originalViewbox = SVG.node().viewBox.baseVal;
                 this._viewboxDimensions = [originalViewbox.width, originalViewbox.height];
 
+                // Remove the all-white polygon acting as the background to the SVG.
                 G.select("polygon").remove();
 
                 this._SVG = SVG;
                 this._G = G;
 
-                const corner1: [number, number] = [0 - initialTransform.translate.x, 0 - initialTransform.translate.y];
-                const corner2: [number, number] = [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y];
-                const center: [number, number] = [(corner1[0] + corner2[0]) / 2, (corner1[1] + corner2[1]) / 2];
-                this._boundingBox = {
-                    corner1,
-                    corner2,
-                    center,
-                };
+                ////////////////////////////////////////////////////////////////////////////////
+                // Get all system names
+                ////////////////////////////////////////////////////////////////////////////////
+                const systemNames = G.selectAll(".node").nodes().map((data: SVGGElement) => data.id);
+                this._systemNames = systemNames;
 
-                const zoom = d3.zoom()
-                    .scaleExtent([1, 8])
-                    .translateExtent([
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // Compute the exterior container's screen-space rectangle expressed in internal
+                // SVG user coordinates. This rectangle represents the actually-visible portion
+                // of the SVG including any space created around the viewbox that may have been 
+                // caused by mechanisms that preserve the aspect ratio of the SVG's contents.
+                //
+                const rect = this.SVG.node().getBoundingClientRect();
+                const matrix = SVG.node().getScreenCTM();
+                const x = (rect.x - matrix.e) / matrix.a;
+                const y = (rect.y - matrix.f) / matrix.d;
+                const width = rect.width / matrix.a;
+                const height = rect.height / matrix.d;
+                this._boundingRect = { x, y, width, height };
+                ////////////////////////////////////////////////////////////////////////////////
+
+                // Non-interactive versions of the SVG (e.g. the minimap) do not need
+                // any zoom/pan behavior.
+                if (isInteractive) {
+                    const scaleExtent: [number, number] = [1, 8];
+                    const translateExtent: [[number, number], [number, number]] = [
                         [0 - initialTransform.translate.x, 0 - initialTransform.translate.y],
                         [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y]
-                    ])
-                    .on('zoom', this.zoomed)
-                    .on('end', this.zoomEnd);
+                    ];
+                    const targetZoomFunction = this.zoomed;
+                    const targetZoomEndFunction = this.zoomEnd;
 
+                    const zoom = d3.zoom()
+                        .scaleExtent(scaleExtent)
+                        .translateExtent(translateExtent)
+                        .on('zoom', targetZoomFunction)
+                        .on('end', targetZoomEndFunction);
 
-                const initiald3Transform = d3.zoomIdentity
-                    .translate(initialTransform.translate.x, initialTransform.translate.y)
-                    .scale(initialTransform.scale.x);
-
-                if (isInteractive) {
+                    const initiald3Transform = d3.zoomIdentity
+                        .translate(initialTransform.translate.x, initialTransform.translate.y)
+                        .scale(initialTransform.scale.x);
                     this.addZoomBehavior(zoom, initiald3Transform);
                 }
+                else {
+                    SVG.on("pointerdown", (event) => { SVG.on("pointermove", this.minimapZoom); this.minimapZoom(event) });
+                    SVG.on("pointerup", (event) => { SVG.on("pointermove", null); this.minimapZoom(event) });
+                }
+
             })
             .catch(console.error);
-
     }
 
     private addZoomBehavior(zoom: d3.ZoomBehavior<Element, unknown>, initialTransform: d3.ZoomTransform) {
+        this._zoom = zoom;
         this.SVG.call(zoom);
         this.SVG.call(zoom.transform, initialTransform);
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    // Parses the transformation matrix into a friendlier, more obvious format
+    ///////////////////////////////////////////////////////////////////////////////
     private parseTransformList(transformList: SVGTransformList) {
         const retVal = { scale: { x: 1, y: 1 }, translate: { x: 0, y: 0 } };
         for (let transform of transformList) {
@@ -137,6 +179,9 @@ export class SVGView implements ViewLike {
         return retVal;
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    // Replaces/appends the SVG in/into the parent container.
+    ///////////////////////////////////////////////////////////////////////////////
     private replaceOrAppend(element: SVGSVGElement) {
         const previousSVG = this.rootHTMLElement.getElementsByTagName('svg')[0];
         if (previousSVG === undefined)
@@ -145,6 +190,9 @@ export class SVGView implements ViewLike {
             this.rootHTMLElement.replaceChild(element, previousSVG);
     }
 
+    ///////////////////////////////////////////////////////////////////////////////
+    // Parses an obfuscated query string into a transform and then applies it.
+    ///////////////////////////////////////////////////////////////////////////////
     public applyTransform(transformStr: string) {
         const transform = this.transformParser(transformStr);
         if (transform === undefined) return;
@@ -153,98 +201,86 @@ export class SVGView implements ViewLike {
         svg.call(this.zoom.transform, d3transform);
     }
 
-    public centerOnCoords(x: number, y: number, newScale?: number) {
-        const svg = this.SVG;
-        const viewboxDimensions = this.viewboxDimensions;
-        const zoom = this.zoom;
-        const scale = newScale || this.zoomScale;
-        const center = this.boundingBox.center;
-        const X = -x * scale + viewboxDimensions[0] / 2 + center[0];
-        const Y = -y * scale + viewboxDimensions[0] / 2 + center[1];
-        const newZoom = d3.zoomIdentity.translate(X, Y).scale(scale);
-        svg.call(zoom.transform, newZoom);
-    }
-
+    ///////////////////////////////////////////////////////////////////////////////
+    // Centers the SVG's viewbox on the given node's name
+    ///////////////////////////////////////////////////////////////////////////////
     public centerOnNode(searchStr: string) {
-        const svg = this.SVG;
+        const G = this.G;
         const matches = this.names.map(name => {
             const d: number = jaroWinkler(name.toLowerCase(), searchStr.toLowerCase());
             return { name, distance: d };
         }).sort((x, y) => y.distance - x.distance);
-        const closestMatch = matches[0];
-        const selection = svg.select(`#system-${closestMatch.name}`);
-        const x = parseFloat(selection.attr("x"));
-        const y = parseFloat(selection.attr("y"));
-        this.centerOnCoords(x, y, 2);
+        let closestMatch = matches[0].name;
+        const selection = G.select(`#${closestMatch} text`);
+        const selectedNode: SVGTextElement = <SVGTextElement>selection.node();
+        const x = selectedNode.x.baseVal[0].value;
+        const y = selectedNode.y.baseVal[0].value;
+        const scale = Math.max(d3.zoomTransform(this.SVG.node()).k, 3);
+        this.centerOnCoordinates(x, y, scale);
     }
 
-    public minimapRect(t: Transform) {
-        // Estoura volta e meia pq acha que this.SVG é undefined
-        const SVGViewBox = this.SVG.node().viewBox.baseVal;
-        const SVGBBox = this.SVG.node().getBoundingClientRect()
+    ///////////////////////////////////////////////////////////////////////////////
+    // Centers the SVG's viewbox on the given coordinates at the given scale
+    ///////////////////////////////////////////////////////////////////////////////
+    public centerOnCoordinates(x: number, y: number, scale: number) {
+        this.zoom.scaleTo(this.SVG, scale);
+        this.zoom.translateTo(this.SVG, x, y);
+    }
 
-        const screenWidth = SVGBBox.width;
-        const screenHeight = SVGBBox.height;
-        const userWidth = SVGViewBox.width;
-        const userHeight = SVGViewBox.height;
-        const screentoUserRatioX = screenWidth / userWidth;
-        const screentoUserRatioY = screenHeight / userHeight;
+    public centerOnInteractionCoordinates(i: Interaction) {
+        const x = i.x - this.initialTransform.translate.x;
+        const y = i.y - this.initialTransform.translate.y;
+        const scale = d3.zoomTransform(this.SVG.node()).k;
+        this.centerOnCoordinates(x, y, scale);
+    }
 
-        const dx = t.x / t.k;
-        const dy = t.y / t.k;
 
-        console.dir("removing rect");
+    ///////////////////////////////////////////////////////////////////////////////
+    // Draws a rectangle on the origin + an offset.
+    // This rectangle is then rescaled and translated by the given transform 
+    ///////////////////////////////////////////////////////////////////////////////
+    public minimapRect(t: TransformAndRect) {
+        // TODO: this can likely be rewritten in terms of
+        // transformations in d3 but their documentation is
+        // quite unhelpful and I'm sick and tired of messing with this
+        const dx = -t.x / t.k;
+        const dy = -t.y / t.k;
+        const x = t.rect.x / t.k;
+        const y = t.rect.y / t.k;
+        const width = t.rect.width / t.k;
+        const height = t.rect.height / t.k;
+
         this.G.select("#svg-minimap-rect").remove();
-        console.dir("adding rect");
         this.G
             .append("rect")
             .attr("id", "svg-minimap-rect")
-            .attr("width", SVGBBox.width / screentoUserRatioX / t.k)
-            .attr("height", SVGBBox.height / screentoUserRatioY / t.k)
-            .attr('transform', `translate(${-dx},${-dy})`)
+            .attr("width", width)
+            .attr("height", height)
+            .attr("x", x)
+            .attr("y", y)
+            .attr('transform', `translate(${dx},${dy})`)
             ;
-    }
-
-    protected computeBoundingBox = (coordinates: { x: number, y: number }[]): {
-        corner1: [number, number],
-        corner2: [number, number],
-        center: [number, number]
-    } => {
-        return coordinates.reduce((acc, val) => {
-            const x = val.x;
-            const y = val.y;
-            const corner1 = acc.corner1;
-            const corner2 = acc.corner2;
-            if (x <= corner1[0]) corner1[0] = x;
-            if (y <= corner1[1]) corner1[1] = y;
-            if (x >= corner2[0]) corner2[0] = x;
-            if (y >= corner2[1]) corner2[1] = y;
-            acc.center = [(corner2[0] + corner1[0]) / 2, (corner2[1] + corner1[1]) / 2];
-            return acc;
-        }, {
-            corner1: [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
-            corner2: [Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
-            center: [0, 0]
-        });
     }
 
     protected zoomed = (event) => {
         const { transform } = event;
-        const screenWidth = this.rootHTMLElement.clientWidth;
-        const screenHeight = this.rootHTMLElement.clientHeight;
-        const aspectRatio = screenWidth / screenHeight;
         this.G.attr("transform", transform);
-        if (this.transformListener !== undefined) this.transformListener.set({ ...transform, aspectRatio });
-        this._zoomScale = transform.k;
+        if (this.transformListener !== undefined) this.transformListener.set({ ...transform, rect: this.boundingRect, originalTransform: transform });
     }
 
     protected zoomEnd = (event) => {
         this.zoomed(event);
         const { transform } = event;
         const serialized = btoa(JSON.stringify(transform));
-        const currentURL = new URL(window.location.toString());
-        currentURL.searchParams.set("args", serialized);
-        history.replaceState({}, '', currentURL.toString());
+        History.instance.setHistory("args", serialized);
+    }
+
+    protected minimapZoom = (event) => {
+        const coords = d3.pointer(event);
+        const eventType = event.type;
+        const x = coords[0];
+        const y = coords[1];
+        if (this.clickListener !== undefined) this.clickListener.set({ type: eventType, x, y });
     }
 
     protected transformParser = (transform: string): { translate: number[], scale: number } => {
