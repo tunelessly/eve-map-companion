@@ -215,7 +215,8 @@ export class SVGView implements ViewLike {
         const selectedNode: SVGTextElement = <SVGTextElement>selection.node();
         const x = selectedNode.x.baseVal[0].value;
         const y = selectedNode.y.baseVal[0].value;
-        this.centerOnCoordinates(x, y, 3);
+        const scale = Math.max(d3.zoomTransform(this.SVG.node()).k, 3);
+        this.centerOnCoordinates(x, y, scale);
     }
 
     ///////////////////////////////////////////////////////////////////////////////
