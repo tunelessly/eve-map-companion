@@ -13,19 +13,11 @@ import type { Transform, UserCoordinates } from "../../utils/svelte-store"
 // 2a) (Optional) Verify that the rectangle is correct by drawing it on the 
 //          larger SVG.
 // 3) This SVG user coordinate rectangle represents the visible portion.
-//          We want to draw this rectangle on the smaller SVG but we need more info.
-// 4) Since both SVGs have the same data, pick the first node and get its coordinates.
-// 5) Do the previous step on _both_ SVGs.
-// 6) Calculate the offset in both axes to the origin for the chosen point.
-//          Knowing these points allows us to compare how far each SVG's origin is
-//          from the same point.
-// 7) The larger SVG sends its offset to the smaller SVG.
-// 8) The smaller SVG computes the final offset - the difference between the
-//          the larger and smaller SVG's offsets.
-// 9) Apply the offset to the rectangle. This moves the rectangle to the correct
-//          position on the new SVG.
-// 10) ???
-// 11) Profit
+//          We will simply draw it on the smaller SVG.
+// 4) Apply the transform performed on the larger SVG on the rectangle of the
+//          the smaller SVG.
+// 5) ???
+// 6) Profit.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -33,15 +25,8 @@ export class SVGView implements ViewLike {
     protected readonly _rootHTMLElement: HTMLElement;
     protected _SVG: d3.Selection<SVGSVGElement, unknown, null, undefined>;
     protected _G: d3.Selection<d3.BaseType, unknown, null, undefined>;
-    protected _translationVec: number[];
     protected _zoom: d3.ZoomBehavior<Element, unknown>;
-    protected _zoomScale: number;
     protected _systemNames: string[] = [];
-    protected _boundingBox: {
-        corner1: [number, number],
-        corner2: [number, number],
-        center: [number, number],
-    };
     protected _initialTransform: { scale: { x: number, y: number }, translate: { x: number, y: number } };
     protected _viewboxDimensions = [100, 100];
     protected _transformListener: Writable<Transform>;
@@ -51,14 +36,11 @@ export class SVGView implements ViewLike {
     protected get rootHTMLElement() { return this._rootHTMLElement; }
     protected get SVG() { return this._SVG; }
     protected get G() { return this._G; }
-    protected get translationVec() { return this._translationVec; }
     protected get zoom() { return this._zoom; }
     protected get names() { return this._systemNames; }
-    protected get boundingBox() { return this._boundingBox; }
     protected get viewboxDimensions() { return this._viewboxDimensions; }
     protected get transformListener() { return this._transformListener; }
     protected get clickListener() { return this._clickListener; }
-    protected get zoomScale() { return this._zoomScale; }
     protected get initialTransform() { return this._initialTransform; }
     protected get boundingRect() { return this._boundingRect; }
 
@@ -111,16 +93,6 @@ export class SVGView implements ViewLike {
                 this._SVG = SVG;
                 this._G = G;
 
-                const corner1: [number, number] = [0 - initialTransform.translate.x, 0 - initialTransform.translate.y];
-                const corner2: [number, number] = [originalViewbox.width - initialTransform.translate.x, originalViewbox.height - initialTransform.translate.y];
-                const center: [number, number] = [(corner1[0] + corner2[0]) / 2, (corner1[1] + corner2[1]) / 2];
-                this._boundingBox = {
-                    corner1,
-                    corner2,
-                    center,
-                };
-
-
                 ////////////////////////////////////////////////////////////////////////////////
                 // Get all system names
                 ////////////////////////////////////////////////////////////////////////////////
@@ -131,8 +103,8 @@ export class SVGView implements ViewLike {
                 ////////////////////////////////////////////////////////////////////////////////
                 // Compute the exterior container's screen-space rectangle expressed in internal
                 // SVG user coordinates. This rectangle represents the actually-visible portion
-                // of the SVG including any space created around the viewbox because of
-                // aspect ratio preservation.
+                // of the SVG including any space created around the viewbox that may have been 
+                // cause by mechanisms that preserve the aspect ratio of the SVG's contents.
                 //
                 const rect = this.SVG.node().getBoundingClientRect();
                 const matrix = SVG.node().getScreenCTM();
@@ -198,7 +170,7 @@ export class SVGView implements ViewLike {
     }
 
     ///////////////////////////////////////////////////////////////////////////////
-    // Replaces/appends the SVG into the parent container.
+    // Replaces/appends the SVG in/into the parent container.
     ///////////////////////////////////////////////////////////////////////////////
     private replaceOrAppend(element: SVGSVGElement) {
         const previousSVG = this.rootHTMLElement.getElementsByTagName('svg')[0];
@@ -267,34 +239,10 @@ export class SVGView implements ViewLike {
             ;
     }
 
-    protected computeBoundingBox = (coordinates: { x: number, y: number }[]): {
-        corner1: [number, number],
-        corner2: [number, number],
-        center: [number, number]
-    } => {
-        return coordinates.reduce((acc, val) => {
-            const x = val.x;
-            const y = val.y;
-            const corner1 = acc.corner1;
-            const corner2 = acc.corner2;
-            if (x <= corner1[0]) corner1[0] = x;
-            if (y <= corner1[1]) corner1[1] = y;
-            if (x >= corner2[0]) corner2[0] = x;
-            if (y >= corner2[1]) corner2[1] = y;
-            acc.center = [(corner2[0] + corner1[0]) / 2, (corner2[1] + corner1[1]) / 2];
-            return acc;
-        }, {
-            corner1: [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
-            corner2: [Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
-            center: [0, 0]
-        });
-    }
-
     protected zoomed = (event) => {
         const { transform } = event;
         this.G.attr("transform", transform);
         if (this.transformListener !== undefined) this.transformListener.set({ ...transform, rect: this.boundingRect, originalTransform: transform });
-        this._zoomScale = transform.k;
     }
 
     protected zoomEnd = (event) => {
